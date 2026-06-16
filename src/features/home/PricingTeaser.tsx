@@ -269,14 +269,14 @@ export default function PricingTeaser() {
                         <Check
                           size={16}
                           strokeWidth={2.5}
-                          style={{ color: "var(--teal)", shrink: 0 }}
+                          style={{ color: "var(--teal)", flexShrink: 0 }}
                           aria-hidden="true"
                         />
                       ) : (
                         <Minus
                           size={16}
                           strokeWidth={2}
-                          style={{ color: "var(--slate-200)", shrink: 0 }}
+                          style={{ color: "var(--slate-200)", flexShrink: 0 }}
                           aria-hidden="true"
                         />
                       )}
