@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { 
   Briefcase, 
@@ -17,16 +17,19 @@ import {
 } from "lucide-react";
 
 interface JobRole {
+  id?: string;
   title: string;
-  department: "Engineering" | "Product & Design" | "DevRel" | "Marketing" | "Operations";
+  department: string;
   location: string;
-  type: "Full-time" | "Contract" | "Remote" | "Hybrid";
+  type: string;
   experience: string;
   description: string;
+  status?: "Active" | "Draft";
 }
 
-const jobOpenings: JobRole[] = [
+const defaultJobOpenings: JobRole[] = [
   {
+    id: "job_1",
     title: "Senior AI & NLP Engineer",
     department: "Engineering",
     location: "Jakarta / Remote",
@@ -35,6 +38,7 @@ const jobOpenings: JobRole[] = [
     description: "Merancang dan melatih model NLP kustom untuk integrasi analitik percakapan dan asisten virtual otomatis di platform Brandy."
   },
   {
+    id: "job_2",
     title: "Senior UX/UI Designer",
     department: "Product & Design",
     location: "Jakarta / Hybrid",
@@ -43,6 +47,7 @@ const jobOpenings: JobRole[] = [
     description: "Memimpin perancangan sistem desain (design system) premium Brandy, visualisasi data interaktif, dan kolaborasi workflow produk."
   },
   {
+    id: "job_3",
     title: "Technical Writer & DevRel Specialist",
     department: "DevRel",
     location: "Jakarta / Hybrid",
@@ -51,6 +56,7 @@ const jobOpenings: JobRole[] = [
     description: "Menulis panduan integrasi API teknis, mengelola forum komunitas developer, dan membangun kemitraan teknologi strategis."
   },
   {
+    id: "job_4",
     title: "SaaS Product Manager",
     department: "Product & Design",
     location: "Jakarta",
@@ -87,14 +93,31 @@ export default function CareersPage() {
   const [selectedDept, setSelectedDept] = useState<string>("All");
   const [activeJob, setActiveJob] = useState<JobRole | null>(null);
   const [applied, setApplied] = useState(false);
+  const [jobs, setJobs] = useState<JobRole[]>(defaultJobOpenings);
 
-  const departments = ["All", "Engineering", "Product & Design", "DevRel"];
+  useEffect(() => {
+    fetch("/api/admin/careers")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && resData.careers) {
+          // Only show active job listings on public site
+          const activeJobs = resData.careers.filter((j: any) => j.status === "Active");
+          setJobs(activeJobs);
+        }
+      })
+      .catch((err) => console.error("Error loading careers data", err));
+  }, []);
+
+  const departments = useMemo(() => {
+    const uniqueDepts = Array.from(new Set(jobs.map((j) => j.department)));
+    return ["All", ...uniqueDepts];
+  }, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    return jobOpenings.filter(
+    return jobs.filter(
       (job) => selectedDept === "All" || job.department === selectedDept
     );
-  }, [selectedDept]);
+  }, [jobs, selectedDept]);
 
   const handleSubmitApplication = (e: React.FormEvent) => {
     e.preventDefault();
