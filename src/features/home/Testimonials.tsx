@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
-/**
- * Testimonials — PRD2 Bab 9 / Anti-AI-Default rules:
- * - Dark background card (slate-950)
- * - Large DM Serif decorative quote mark
- * - Real human photo placeholder
- * - NO yellow stars
- * - Masonry layout on desktop
- */
+interface TestimonialItem {
+  id: string;
+  quote: string;
+  name: string;
+  title: string;
+  company: string;
+  initials: string;
+  color: string;
+  featured: boolean;
+  caseStudyUrl?: string;
+  revenueIncrease?: string;
+}
 
-const testimonials = [
+const defaultTestimonials: TestimonialItem[] = [
   {
     id: "t1",
     quote:
@@ -24,6 +28,7 @@ const testimonials = [
     color: "var(--brand-blue-mid)",
     featured: true,
     caseStudyUrl: "/customers/maju-bersama",
+    revenueIncrease: "+40%",
   },
   {
     id: "t2",
@@ -63,6 +68,18 @@ const testimonials = [
 
 export default function Testimonials() {
   const sectionRef = useRef<HTMLElement>(null);
+  const [list, setList] = useState<TestimonialItem[]>(defaultTestimonials);
+
+  useEffect(() => {
+    fetch("/api/admin/testimonials")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.testimonials) {
+          setList(data.testimonials);
+        }
+      })
+      .catch((err) => console.error("Error loading testimonials data", err));
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -71,10 +88,10 @@ export default function Testimonials() {
     );
     sectionRef.current?.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [list]);
 
-  const featured = testimonials.find((t) => t.featured)!;
-  const others = testimonials.filter((t) => !t.featured);
+  const featured = list.find((t) => t.featured) || list[0];
+  const others = list.filter((t) => t.id !== featured.id);
 
   return (
     <section
@@ -137,7 +154,7 @@ export default function Testimonials() {
 }
 
 /* Featured card */
-function TestimonialCardFeatured({ t }: { t: (typeof testimonials)[0] }) {
+function TestimonialCardFeatured({ t }: { t: TestimonialItem }) {
   return (
     <div
       className="relative rounded-2xl p-8 md:p-12 overflow-hidden"
@@ -186,17 +203,19 @@ function TestimonialCardFeatured({ t }: { t: (typeof testimonials)[0] }) {
         </blockquote>
 
         {/* Accent stat */}
-        <div className="shrink-0 text-center md:text-right">
-          <p
-            className="text-display-lg"
-            style={{ fontFamily: "var(--font-display)", color: "var(--amber-light)" }}
-          >
-            +40%
-          </p>
-          <p className="text-sm" style={{ color: "var(--slate-400)" }}>
-            pertumbuhan revenue
-          </p>
-        </div>
+        {t.revenueIncrease && (
+          <div className="shrink-0 text-center md:text-right">
+            <p
+              className="text-display-lg"
+              style={{ fontFamily: "var(--font-display)", color: "var(--amber-light)" }}
+            >
+              {t.revenueIncrease}
+            </p>
+            <p className="text-sm" style={{ color: "var(--slate-400)" }}>
+              pertumbuhan revenue
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -207,7 +226,7 @@ function TestimonialCard({
   t,
   className,
 }: {
-  t: (typeof testimonials)[0];
+  t: TestimonialItem;
   className?: string;
 }) {
   return (
