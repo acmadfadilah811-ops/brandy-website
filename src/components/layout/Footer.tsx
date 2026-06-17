@@ -78,6 +78,7 @@ export default function Footer() {
     socialTwitter: string;
     socialLinkedIn: string;
     socialInstagram: string;
+    logoLightUrl: string;
   }>({
     companyName: "Brandy Technologies",
     officeAddress: "Jakarta Selatan, Indonesia",
@@ -86,6 +87,7 @@ export default function Footer() {
     socialTwitter: "https://twitter.com/brandyid",
     socialLinkedIn: "https://linkedin.com/company/brandyid",
     socialInstagram: "https://instagram.com/brandyid",
+    logoLightUrl: "/logo_brandy_full_light.png",
   });
 
   useEffect(() => {
@@ -139,7 +141,7 @@ export default function Footer() {
           <div className="max-w-xs">
             <Link href="/" className="inline-flex items-center mb-4" aria-label="Brandy — Beranda">
               <Image
-                src="/logo_brandy_full_light.png"
+                src={settings.logoLightUrl || "/logo_brandy_full_light.png"}
                 alt="Brandy Logo"
                 width={150}
                 height={40}

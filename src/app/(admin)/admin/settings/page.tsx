@@ -9,13 +9,14 @@ import {
   Share2, 
   MapPin, 
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { globalSettingsSchema } from "@/lib/validations/settings";
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"identity" | "contact" | "social" | "map">("identity");
+  const [activeTab, setActiveTab] = useState<"identity" | "contact" | "social" | "map" | "logo">("identity");
   
   const [companyName, setCompanyName] = useState("");
   const [tagline, setTagline] = useState("");
@@ -26,6 +27,8 @@ export default function AdminSettingsPage() {
   const [socialTwitter, setSocialTwitter] = useState("");
   const [socialInstagram, setSocialInstagram] = useState("");
   const [mapsEmbedUrl, setMapsEmbedUrl] = useState("");
+  const [logoDarkUrl, setLogoDarkUrl] = useState("");
+  const [logoLightUrl, setLogoLightUrl] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,6 +55,8 @@ export default function AdminSettingsPage() {
         setSocialTwitter(data.settings.socialTwitter || "");
         setSocialInstagram(data.settings.socialInstagram || "");
         setMapsEmbedUrl(data.settings.mapsEmbedUrl || "");
+        setLogoDarkUrl(data.settings.logoDarkUrl || "");
+        setLogoLightUrl(data.settings.logoLightUrl || "");
       }
     } catch (err: any) {
       setGeneralError(err.message || "Terjadi kesalahan koneksi.");
@@ -81,6 +86,8 @@ export default function AdminSettingsPage() {
       socialTwitter,
       socialInstagram,
       mapsEmbedUrl,
+      logoDarkUrl,
+      logoLightUrl,
     };
 
     // Client-side Zod validation
@@ -165,6 +172,16 @@ export default function AdminSettingsPage() {
           <Building2 size={14} /> Identitas Bisnis
         </button>
         <button
+          onClick={() => setActiveTab("logo")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-600 border-b-2 transition-all whitespace-nowrap ${
+            activeTab === "logo"
+              ? "border-slate-900 text-slate-900 font-700"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <ImageIcon size={14} /> Logo Website
+        </button>
+        <button
           onClick={() => setActiveTab("contact")}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-600 border-b-2 transition-all whitespace-nowrap ${
             activeTab === "contact"
@@ -243,6 +260,49 @@ export default function AdminSettingsPage() {
                     }`}
                   />
                   {errors.tagline && <p className="text-[10px] text-error-red mt-1.5">{errors.tagline}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Tab: Logo Website */}
+            {activeTab === "logo" && (
+              <div className="space-y-4 animate-fade-in">
+                <div>
+                  <label htmlFor="logoDarkUrl" className="block text-xs font-600 uppercase tracking-wider text-slate-500 mb-2">
+                    URL Logo Gelap (Untuk Background Terang)
+                  </label>
+                  <input
+                    id="logoDarkUrl"
+                    type="text"
+                    value={logoDarkUrl}
+                    onChange={(e) => setLogoDarkUrl(e.target.value)}
+                    placeholder="e.g. /logo_brandy_full.png"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:outline-none focus:border-brand-blue-mid focus:ring-2 focus:ring-brand-blue-deep/20 transition-all"
+                  />
+                  {logoDarkUrl && (
+                    <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center h-16">
+                      <img src={logoDarkUrl} alt="Dark logo preview" className="max-h-10 object-contain" />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="logoLightUrl" className="block text-xs font-600 uppercase tracking-wider text-slate-500 mb-2">
+                    URL Logo Terang (Untuk Background Gelap)
+                  </label>
+                  <input
+                    id="logoLightUrl"
+                    type="text"
+                    value={logoLightUrl}
+                    onChange={(e) => setLogoLightUrl(e.target.value)}
+                    placeholder="e.g. /logo_brandy_full_light.png"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:outline-none focus:border-brand-blue-mid focus:ring-2 focus:ring-brand-blue-deep/20 transition-all"
+                  />
+                  {logoLightUrl && (
+                    <div className="mt-3 p-3 bg-slate-950 rounded-lg border border-slate-900 flex items-center justify-center h-16">
+                      <img src={logoLightUrl} alt="Light logo preview" className="max-h-10 object-contain" />
+                    </div>
+                  )}
                 </div>
               </div>
             )}

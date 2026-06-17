@@ -36,6 +36,14 @@ export const globalSettingsSchema = z.object({
     .string()
     .url("Format URL Embed Google Maps tidak valid")
     .or(z.literal("")),
+  logoDarkUrl: z
+    .string()
+    .optional()
+    .or(z.literal("")),
+  logoLightUrl: z
+    .string()
+    .optional()
+    .or(z.literal("")),
 });
 
 export type GlobalSettingsInput = z.infer<typeof globalSettingsSchema>;

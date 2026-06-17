@@ -85,6 +85,19 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
+  const [logoDarkUrl, setLogoDarkUrl] = useState("/logo_brandy_full.png");
+
+  /* Fetch global logo setting */
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings?.logoDarkUrl) {
+          setLogoDarkUrl(data.settings.logoDarkUrl);
+        }
+      })
+      .catch((err) => console.error("Error loading header settings", err));
+  }, []);
 
   /* Detect scroll for sticky border */
   useEffect(() => {
@@ -129,7 +142,7 @@ export default function Header() {
             className="flex items-center gap-2 shrink-0"
             aria-label="Brandy — Beranda"
           >
-            <BrandyLogo />
+            <BrandyLogo src={logoDarkUrl} />
           </Link>
 
           {/* Desktop Nav */}
@@ -424,10 +437,10 @@ export default function Header() {
 /*  Sub-components                                                      */
 /* ------------------------------------------------------------------ */
 
-function BrandyLogo() {
+function BrandyLogo({ src }: { src: string }) {
   return (
     <Image
-      src="/logo_brandy_full.png"
+      src={src}
       alt="Brandy Logo"
       width={150}
       height={40}

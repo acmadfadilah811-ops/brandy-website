@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
             socialTwitter: data.socialTwitter,
             socialInstagram: data.socialInstagram,
             mapsEmbedUrl: data.mapsEmbedUrl,
+            logoDarkUrl: data.logoDarkUrl,
+            logoLightUrl: data.logoLightUrl,
           })
           .commit();
 
@@ -88,6 +90,8 @@ export async function POST(req: NextRequest) {
           socialTwitter: data.socialTwitter,
           socialInstagram: data.socialInstagram,
           mapsEmbedUrl: data.mapsEmbedUrl,
+          logoDarkUrl: data.logoDarkUrl,
+          logoLightUrl: data.logoLightUrl,
         });
 
         return NextResponse.json({
