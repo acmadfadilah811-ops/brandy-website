@@ -1,97 +1,38 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import { 
-  Briefcase, 
-  Users, 
-  BarChart3, 
-  Database, 
-  CreditCard, 
-  FileText,
-  ArrowRight,
-  Filter,
-  Sparkles
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { getAllProducts } from "@/lib/sanity/products";
+import { getIconComponent } from "@/lib/mockProducts";
+import ProductFilters from "./ProductFilters";
 import { ButtonLink } from "@/components/ui/Button";
 
-// Products Mock Data
-const products = [
-  {
-    name: "Brandy Workspace",
-    slug: "workspace",
-    tagline: "Kolaborasi tim modern dalam satu ruang kerja digital terpadu.",
-    description: "Satukan chat, tugas, dokumen, dan jadwal tim Anda dalam satu dasbor responsif. Mengurangi kebutuhan rapat koordinasi hingga 40% dan mempercepat peluncuran proyek.",
-    icon: Users,
-    category: "Collaboration",
-    badge: "Populer",
-    color: "border-blue-500 text-blue-600 bg-blue-50",
-  },
-  {
-    name: "Brandy CRM",
-    slug: "crm",
-    tagline: "Optimalkan relasi pelanggan & percepat siklus penjualan.",
-    description: "Kelola kontak, rekam histori komunikasi otomatis, lacak pipeline penjualan, dan kirim proposal pembayaran secara langsung. Membantu tim sales menutup lebih banyak transaksi.",
-    icon: Briefcase,
-    category: "Sales",
-    badge: "Terlaris",
-    color: "border-amber-500 text-amber-600 bg-amber-50",
-  },
-  {
-    name: "Brandy Analytics",
-    slug: "analytics",
-    tagline: "Visualisasikan performa bisnis Anda secara real-time.",
-    description: "Hubungkan berbagai sumber data bisnis Anda ke satu platform analitik cerdas. Ambil keputusan berbasis data dengan bantuan prediksi AI dan report otomatis.",
-    icon: BarChart3,
-    category: "Data",
-    badge: "AI Powered",
-    color: "border-teal-500 text-teal-600 bg-teal-50",
-  },
-  {
-    name: "Brandy Devops",
-    slug: "devops",
-    tagline: "Automasi CI/CD & monitor performa server serverless.",
-    description: "Sistem automasi pengujian, kompilasi, dan deployment kode ke cloud. Dapatkan laporan error instan, grafik load server, dan optimalisasi biaya cloud computing.",
-    icon: Database,
-    category: "Infrastructure",
-    badge: "Developer Tool",
-    color: "border-purple-500 text-purple-600 bg-purple-50",
-  },
-  {
-    name: "Brandy Pay",
-    slug: "pay",
-    tagline: "Kelola invoice, billing, & gerbang pembayaran digital.",
-    description: "Rancang pricing page, tagih pelanggan dengan subscription billing otomatis, dan terima transfer virtual account atau kartu kredit secara mudah.",
-    icon: CreditCard,
-    category: "Sales",
-    badge: "Keuangan",
-    color: "border-emerald-500 text-emerald-600 bg-emerald-50",
-  },
-  {
-    name: "Brandy Docs",
-    slug: "docs",
-    tagline: "Dokumentasi tim & knowledge base kolaboratif.",
-    description: "Buat panduan operasional (SOP), wiki internal, atau catatan teknis bersama dengan rich text editor instan. Dilengkapi dengan pencarian berbasis semantik.",
-    icon: FileText,
-    category: "Collaboration",
-    badge: "Gratis",
-    color: "border-slate-500 text-slate-600 bg-slate-50",
-  },
-];
+export const revalidate = 60; // Caching: ISR revalidate every 60s (PRD Bagian 4)
 
-const categories = ["All", "Collaboration", "Sales", "Data", "Infrastructure"];
+export const metadata = {
+  title: "Produk Ekosistem Brandy — Solusi SaaS Enterprise",
+  description: "Jelajahi rangkaian perangkat lunak SaaS terintegrasi kami yang dirancang untuk meningkatkan kolaborasi tim, produktivitas kerja, dan skalabilitas bisnis Anda.",
+};
 
-export default function ProductsPage() {
-  const [selectedCategory, setSelectedCategory] = useState("All");
+interface PageProps {
+  searchParams: Promise<{
+    category?: string;
+  }>;
+}
 
-  const filteredProducts = selectedCategory === "All"
+export default async function ProductsPage({ searchParams }: PageProps) {
+  const { category = "All" } = await searchParams;
+  const categories = ["All", "Collaboration", "Sales", "Data", "Infrastructure"];
+
+  // Fetch all products (Sanity CMS with local mock fallback)
+  const products = await getAllProducts();
+
+  // Filter products on the server
+  const filteredProducts = category === "All"
     ? products
-    : products.filter(p => p.category === selectedCategory);
+    : products.filter(p => p.category === category);
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      {/* Hero Header */}
+      {/* ── 1. HERO HEADER (PRD Bagian 11 & 12) ── */}
       <section className="relative overflow-hidden bg-white border-b border-slate-100 py-16 text-center" aria-label="Hero Products">
         <div 
           className="absolute inset-0 opacity-40 pointer-events-none"
@@ -104,7 +45,7 @@ export default function ProductsPage() {
         <div className="container-brand relative z-10 max-w-3xl">
           <span className="badge badge-blue mb-4 inline-flex">Produk Brandy</span>
           <h1 
-            className="text-heading-2xl text-slate-900 mb-6 tracking-tight"
+            className="text-heading-2xl text-slate-900 mb-6 tracking-tight animate-fade-in"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             Satu Ekosistem untuk <span className="text-gradient">Seluruh Operasional Bisnis</span>
@@ -116,71 +57,50 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      {/* Main listing section */}
+      {/* ── 2. MAIN PRODUCT LISTING SECTION ── */}
       <section className="py-16" aria-label="Daftar Produk">
         <div className="container-brand max-w-6xl">
           
-          {/* Category Filter Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-12 pb-6 border-b border-slate-200">
-            <div className="flex items-center gap-2 text-slate-500 text-sm font-500">
-              <Filter size={16} />
-              Filter Kategori:
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    "px-4 py-2 rounded-full text-xs font-600 border transition-all",
-                    selectedCategory === cat
-                      ? "bg-brand-blue-mid text-white border-brand-blue-mid shadow-sm"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                  )}
-                >
-                  {cat === "All" ? "Semua Produk" : cat}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Category Filter Controls client component */}
+          <ProductFilters 
+            categories={categories}
+            selectedCategory={category}
+          />
 
           {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map((p) => {
-              const IconComponent = p.icon;
+              const IconComponent = getIconComponent(p.iconName);
+              const colorClasses = p.color || "text-blue-600 bg-blue-50 border-blue-200";
+              const borderAndColor = colorClasses.split(" ");
+              
               return (
                 <div
                   key={p.slug}
-                  className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:border-brand-blue-mid/40 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+                  className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:border-brand-blue-mid/40 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
                 >
                   <div>
-                    {/* Header */}
+                    {/* Icon and Badge Header */}
                     <div className="flex items-center justify-between mb-5">
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl border flex items-center justify-center shrink-0",
-                        p.color.split(" ").slice(0, 2).join(" ")
-                      )}>
+                      <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${borderAndColor[0]} ${borderAndColor[1]} ${borderAndColor[2] || ""}`}>
                         <IconComponent size={24} strokeWidth={1.5} />
                       </div>
                       
-                      <span className={cn(
-                        "text-[10px] font-700 uppercase tracking-wider px-2.5 py-0.5 rounded-full",
-                        p.color.split(" ")[2],
-                        p.color.split(" ")[1]
-                      )}>
-                        {p.badge}
-                      </span>
+                      {p.badge && (
+                        <span className={`text-[10px] font-700 uppercase tracking-wider px-2.5 py-0.5 rounded-full ${borderAndColor[1]} ${borderAndColor[0]}`}>
+                          {p.badge}
+                        </span>
+                      )}
                     </div>
 
                     <h3 
-                      className="text-lg font-bold text-slate-900 mb-2"
+                      className="text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-blue-mid transition-colors"
                       style={{ fontFamily: "var(--font-heading)" }}
                     >
                       {p.name}
                     </h3>
                     
-                    <p className="text-xs font-500 text-brand-blue-mid mb-3 leading-snug">
+                    <p className="text-xs font-550 text-brand-blue-mid mb-3 leading-snug">
                       {p.tagline}
                     </p>
 
@@ -206,14 +126,14 @@ export default function ProductsPage() {
           {/* Empty State */}
           {filteredProducts.length === 0 && (
             <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl shadow-sm">
-              <p className="text-slate-500 text-sm">Tidak ada produk ditemukan untuk kategori ini.</p>
+              <p className="text-slate-500 text-xs">Tidak ada produk ditemukan untuk kategori ini.</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Try Brandy Banner (Dark Section) */}
-      <section className="py-20" style={{ background: "var(--slate-950)", color: "white" }} aria-label="Coba Brandy Banner">
+      {/* ── 3. CALL TO ACTION CONTAINER (Dark Section) ── */}
+      <section className="py-20 bg-slate-950 text-white" aria-label="Coba Brandy Banner">
         <div className="container-brand max-w-4xl text-center space-y-6">
           <div className="inline-flex w-12 h-12 rounded-full bg-amber/15 text-amber items-center justify-center mb-2 mx-auto">
             <Sparkles size={20} />
@@ -224,7 +144,7 @@ export default function ProductsPage() {
           >
             Siap Meningkatkan Efisiensi Bisnis Anda?
           </h2>
-          <p className="text-body-md text-slate-300 max-w-xl mx-auto leading-relaxed">
+          <p className="text-body-md text-slate-350 max-w-xl mx-auto leading-relaxed">
             Dapatkan akses penuh ke seluruh ekosistem produk Brandy secara gratis selama 14 hari. 
             Tanpa perlu komitmen atau pendaftaran kartu kredit.
           </p>

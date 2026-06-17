@@ -1,0 +1,825 @@
+================================================================================
+PRODUCT REQUIREMENTS DOCUMENT (PRD) — BRANDY WEBSITE V2
+Versi: 2.0 | Tanggal: 17 Juni 2026 | Status: AKTIF & WAJIB DIIKUTI
+Disusun oleh: Tim Pengembang Brandy | Berlaku untuk: Semua sesi AI build
+================================================================================
+
+PERINGATAN WAJIB UNTUK AI (ANTI-HALUSINASI):
+================================================================================
+Setiap kali AI melakukan build, generate kode, atau modifikasi apapun pada
+proyek Brandy Website, AI WAJIB membaca dan mematuhi PRD ini terlebih dahulu.
+AI DILARANG membuat asumsi sendiri yang bertentangan dengan dokumen ini.
+Jika ada konflik antara instruksi sesi dan PRD ini, PRD ini yang menang.
+Referensi sistem aktif: laporan_sistem_brandy.txt (di folder yang sama).
+================================================================================
+
+BAGIAN 1: IDENTITAS PRODUK
+================================================================================
+Nama Produk    : Brandy Website
+Jenis          : Marketing Website + Admin CMS Panel
+Target User    : Calon Pelanggan SaaS B2B (Publik) + Owner/Admin Brandy (Internal)
+Core Mission   : Platform SaaS terkemuka untuk bisnis modern Indonesia
+Tagline Resmi  : "tumbuh bersama"
+Domain Target  : brandy.id (atau subdomain yang ditetapkan)
+Live URL Kini  : http://203.175.125.235:3000
+
+Stack Teknologi RESMI (JANGAN DIGANTI TANPA KONFIRMASI):
+  - Framework  : Next.js v16.x (App Router) — WAJIB App Router, BUKAN Pages Router
+  - UI Library : React v19.x
+  - Bahasa     : TypeScript v5.x — strict mode AKTIF
+  - Styling    : Tailwind CSS v3.x + CSS Variables di globals.css
+  - CMS        : Sanity.io (target integrasi) — folder /src/lib/sanity/ sudah ada
+  - Database   : Supabase (untuk auth & form data) — folder /src/lib/supabase/ sudah ada
+  - Icons      : Lucide React SAJA — jangan campur dengan library icon lain
+  - Deployment : Docker Standalone + VPS (203.175.125.235)
+
+BAGIAN 2: HALAMAN & RUTE YANG SUDAH ADA (JANGAN DIHAPUS)
+================================================================================
+Semua rute di bawah ini sudah SELESAI dibangun dan HARUS tetap ada:
+
+  /                    → Beranda (Hero, Bento Grid, How It Works, Testimonials, CTA)
+  /about               → Tentang (Timeline, Core Values BRANDY, Tim Pimpinan)
+  /products            → Daftar Produk SaaS Brandy
+  /products/[slug]     → Detail Produk (ROI metrics, Video Demo, Specs, Integrations)
+  /pricing             → Harga (Toggle bulanan/tahunan, 3 Tier, Comparison Table, FAQ)
+  /contact             → Kontak (Maps, Form, WhatsApp, Email)
+  /demo                → Booking Demo (Form profil + Scheduler tanggal/waktu)
+  /blog                → Daftar Blog (Search, Filter kategori, Grid artikel)
+  /blog/[slug]         → Detail Blog (TOC sidebar, Social Share, Author Bio)
+  /customers           → Pelanggan (Case studies 50/50, Dark testimonial cards)
+  /integrations        → Integrasi (Grid konektor tools, Search, Filter)
+  /careers             → Karir (Job listings, Benefits, Modal CV upload)
+  /legal/privacy       → Kebijakan Privasi
+  /legal/terms         → Syarat & Ketentuan
+
+Rute Baru yang Harus Dibangun (V2):
+  /admin               → Admin Panel Login (hanya owner)
+  /admin/dashboard     → Dashboard utama CMS
+  /admin/[section]     → Sub-panel per konten (blog, about, settings, dll.)
+
+BAGIAN 3: SISTEM ADMIN PANEL (CMS TANPA KODE)
+================================================================================
+Tujuan: Owner dapat mengubah SEMUA konten website tanpa menyentuh kode.
+
+3.1 AUTENTIKASI ADMIN
+  - Login via Supabase Auth (email + password)
+  - JWT Token disimpan di httpOnly Cookie (BUKAN localStorage)
+  - Session timeout: 8 jam, auto-refresh jika aktif
+  - Rate limiting login: maksimal 5 percobaan gagal → lockout 15 menit
+  - WAJIB: Password hashing menggunakan bcrypt (sudah ditangani Supabase)
+  - WAJIB: CSRF Protection pada semua form POST
+  - WAJIB: Route /admin/* dilindungi middleware Next.js (middleware.ts)
+
+3.2 MODUL CMS YANG HARUS TERSEDIA DI ADMIN PANEL
+  a) Pengaturan Global (Settings)
+     - Nama perusahaan, tagline, email kontak, nomor WhatsApp, alamat kantor
+     - Upload logo (header & footer), favicon
+     - Tautan media sosial (LinkedIn, Twitter, Instagram)
+     - Google Maps embed URL
+     
+  b) Manajemen Blog
+     - Buat, edit, hapus artikel blog
+     - Upload gambar thumbnail dan cover
+     - Rich text editor (WYSIWYG) — gunakan TipTap atau Sanity Portable Text
+     - Pilih kategori, tag, dan status (Draft / Published)
+     - Set penulis (Author) dari daftar tim
+     
+  c) Manajemen Produk
+     - Edit nama, deskripsi, tagline, harga, fitur tiap produk SaaS
+     - Upload gambar/icon produk
+     - Edit ROI metrics dan data integrations
+     
+  d) Manajemen Tim & About
+     - Edit profil anggota tim (nama, jabatan, foto, bio, LinkedIn)
+     - Edit Timeline milestones perusahaan (tahun, judul, deskripsi)
+     - Edit Core Values (B-R-A-N-D-Y): judul dan deskripsi tiap poin
+     - Edit teks Misi dan Visi
+     
+  e) Manajemen Harga (Pricing)
+     - Edit nama paket, harga bulanan/tahunan, deskripsi
+     - Edit daftar fitur tiap paket (included / not included)
+     - Tambah/hapus baris tabel perbandingan fitur
+     - Edit FAQ pricing
+     
+  f) Manajemen Karir (Careers)
+     - Buat, edit, hapus lowongan kerja
+     - Set departemen, lokasi, tipe (remote/hybrid/full-time)
+     - Edit benefits/perks perusahaan
+     
+  g) Manajemen Integrasi
+     - Tambah/hapus konektor tool (nama, logo, kategori, deskripsi)
+     
+  h) Manajemen Pelanggan (Customers/Testimonials)
+     - Tambah, edit, hapus case study dan testimonial
+     - Upload foto klien dan logo perusahaan klien
+
+3.3 PROTEKSI DATA DI ADMIN PANEL
+  - Semua endpoint /api/admin/* WAJIB memvalidasi JWT sebelum proses apapun
+  - Input sanitization wajib pada semua field teks (cegah XSS)
+  - File upload: validasi tipe (hanya jpg/png/webp/svg/pdf) + max size 5MB
+  - SQL injection: gunakan Supabase query builder (parameterized queries)
+
+BAGIAN 4: SISTEM CACHING & PERFORMA
+================================================================================
+4.1 STRATEGI CACHE NEXT.JS (App Router)
+
+  a) Halaman Statis (SSG) — cache penuh di CDN:
+     - /about, /legal/privacy, /legal/terms
+     - Gunakan: export const revalidate = 3600 (refresh tiap 1 jam)
+
+  b) Halaman Semi-Dinamis (ISR) — stale-while-revalidate:
+     - /blog, /blog/[slug], /products, /products/[slug], /customers, /integrations
+     - Gunakan: export const revalidate = 300 (refresh tiap 5 menit)
+     - On-demand revalidation dari Admin Panel saat konten diperbarui
+
+  c) Halaman Interaktif (Client-Side):
+     - /pricing, /demo, /contact, /careers — rendered client-side
+     - Data statis di-prefetch via React Query atau SWR
+
+  d) Route API Cache:
+     - GET /api/blog → cache: max-age=300, stale-while-revalidate=600
+     - GET /api/settings → cache: max-age=3600
+     - POST /api/* → NO cache (cache-control: no-store)
+
+4.2 HTTP CACHE HEADERS (Wajib di next.config.ts)
+  - Aset statis (/public/*): Cache-Control: public, max-age=31536000, immutable
+  - Font Google: preloaded via <link rel="preload"> di layout.tsx
+  - Gambar: gunakan Next.js <Image> dengan priority={true} untuk above-fold
+
+4.3 CLIENT-SIDE CACHING
+  - Gunakan SWR atau React Query untuk fetching data di komponen client
+  - Default SWR config: dedupingInterval=60000, revalidateOnFocus=false
+  - LocalStorage: HANYA untuk preferensi UI non-sensitif (misal: tema gelap)
+  - JANGAN simpan token auth atau data user di localStorage
+
+BAGIAN 5: STANDAR KEAMANAN (SECURITY)
+================================================================================
+5.1 AUTENTIKASI & SESI
+  - Auth provider: Supabase Auth (sudah battle-tested, SOC2 compliant)
+  - Token: JWT disimpan di httpOnly, Secure, SameSite=Strict Cookie
+  - Refresh token rotation aktif
+  - Logout: invalidate semua sesi aktif di Supabase
+
+5.2 HTTP SECURITY HEADERS (Wajib di next.config.ts)
+  Tambahkan headers berikut untuk semua response:
+    Content-Security-Policy (CSP): default-src 'self'; script-src 'self' 'unsafe-inline' 
+      https://www.googletagmanager.com; img-src 'self' data: https:; 
+      connect-src 'self' https://*.supabase.co https://*.sanity.io
+    X-Frame-Options: DENY
+    X-Content-Type-Options: nosniff
+    Referrer-Policy: strict-origin-when-cross-origin
+    Permissions-Policy: camera=(), microphone=(), geolocation=()
+    Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+5.3 INPUT VALIDATION
+  - Gunakan library Zod untuk validasi semua input form di server-side
+  - Sanitasi HTML: gunakan DOMPurify sebelum render konten CMS ke halaman publik
+  - File upload: validasi MIME type di server (jangan percaya ekstensi file saja)
+  - Rate limiting API: gunakan middleware Upstash Redis atau Vercel Edge
+
+5.4 ENVIRONMENT VARIABLES
+  - SEMUA secret key (Supabase, Sanity, dll.) WAJIB di .env.local
+  - JANGAN commit .env ke git — pastikan .gitignore mencakupnya
+  - Variabel publik (diakses browser): prefix NEXT_PUBLIC_
+  - Variabel privat (server-only): tanpa prefix, akses hanya di Server Components/API
+
+5.5 PROTEKSI ROUTE ADMIN
+  File: src/middleware.ts
+  Logic: Cek cookie JWT di setiap request ke /admin/*
+  Jika tidak valid → redirect ke /admin/login
+  Jangan pernah expose error detail ke response publik (gunakan log server)
+
+BAGIAN 6: PANDUAN DESAIN (DESIGN SYSTEM)
+================================================================================
+6.1 PALET WARNA RESMI (CSS Variables di globals.css)
+  Warna ini WAJIB digunakan. Jangan gunakan warna Tailwind default langsung.
+
+  Primary Brand:
+    --brand-blue-deep   : #1E3A8A  (biru gelap, tombol utama, heading aksen)
+    --brand-blue-mid    : #2563EB  (biru medium, link, hover, badge)
+    --brand-blue-light  : #60A5FA  (biru terang, highlight, gradient)
+    --brand-blue-tint   : #EFF6FF  (biru sangat muda, background card/badge)
+
+  Accent:
+    --amber             : #F59E0B  (kuning emas, CTA sekunder, highlight metric)
+    --teal              : #0D9488  (hijau teal, status sukses, check icon)
+    --purple-mid        : #7C3AED  (ungu, badge premium, dekorasi)
+
+  Netral:
+    --slate-950         : #020617  (background section gelap, footer)
+    --slate-900         : #0F172A  (card gelap, navbar mobile)
+    --slate-800         : #1E293B  (border gelap)
+    --slate-600         : #475569  (teks sekunder)
+    --slate-400         : #94A3B8  (placeholder, caption)
+    --slate-200         : #E2E8F0  (border terang)
+    --slate-100         : #F1F5F9  (background section terang)
+    --slate-50          : #F8FAFC  (background card putih terang)
+
+  State:
+    --error-red         : #DC2626
+    --success-green     : #16A34A
+    --warning-amber     : #D97706
+
+6.2 TIPOGRAFI RESMI
+  Font Display (angka besar, metric, hero):
+    Family  : 'Bricolage Grotesque', sans-serif
+    Source  : Google Fonts
+    Weights : 700, 800, 900
+
+  Font Heading (judul section, card title):
+    Family  : 'Plus Jakarta Sans', sans-serif
+    Source  : Google Fonts
+    Weights : 600, 700, 800
+
+  Font Body (paragraf, deskripsi):
+    Family  : 'Inter', sans-serif
+    Source  : Google Fonts
+    Weights : 400, 500, 600
+
+  CSS Variable:
+    --font-display  : 'Bricolage Grotesque', sans-serif
+    --font-heading  : 'Plus Jakarta Sans', sans-serif
+    --font-body     : 'Inter', sans-serif
+
+  Skala Ukuran (gunakan class Tailwind custom):
+    text-heading-2xl : font-size 3rem   / line-height 1.1 (hero title)
+    text-heading-xl  : font-size 2.25rem / line-height 1.2 (section title)
+    text-heading-lg  : font-size 1.5rem  / line-height 1.3 (card title)
+    text-heading-md  : font-size 1.25rem / line-height 1.4 (sub-heading)
+    text-body-lg     : font-size 1.125rem / line-height 1.6 (lead paragraph)
+    text-body-md     : font-size 1rem     / line-height 1.7 (body text)
+
+6.3 SPACING & LAYOUT
+  Max Content Width : 1280px (CSS var: --max-content)
+  Container Padding : 24px mobile / 48px tablet / 80px desktop
+  Section Padding   : py-16 (mobile) / py-20 (desktop) — konsisten di semua halaman
+  Card Border Radius: rounded-xl (12px) untuk card biasa, rounded-2xl (16px) untuk card utama
+  Grid System       : Tailwind grid cols (1 → 2 → 3 → 4) dengan gap-8 standar
+
+6.4 KOMPONEN UI STANDAR
+  a) Button:
+     - Primary   : bg-brand-blue-mid text-white hover:bg-brand-blue-deep
+     - Secondary : bg-slate-100 text-slate-900 hover:bg-slate-200
+     - Amber/CTA : bg-amber text-white hover:bg-amber/90
+     - Ghost     : bg-transparent border border-slate-300 hover:bg-slate-50
+     - Outline-white: border border-white/40 text-white hover:bg-white/10
+     - Sizes: sm (px-3 py-1.5 text-xs), md (px-4 py-2 text-sm), lg (px-6 py-3 text-base)
+     - WAJIB: transition-all duration-200, rounded-lg, font-600
+
+  b) Badge:
+     - badge-blue   : bg-blue-50 text-brand-blue-mid border border-blue-200
+     - badge-amber  : bg-amber/10 text-amber border border-amber/20
+     - badge-purple : bg-purple-50 text-purple-700 border border-purple-200
+     - badge-green  : bg-teal/10 text-teal border border-teal/20
+     - Style dasar  : text-xs font-700 uppercase tracking-widest px-3 py-1 rounded-full
+
+  c) Card:
+     - Default: bg-white border border-slate-200 rounded-xl shadow-sm
+     - Hover  : hover:-translate-y-1 hover:shadow-md transition-all duration-300
+     - Dark   : bg-slate-900 border border-slate-800 (untuk section gelap)
+
+  d) Input/Form:
+     - Default: border border-slate-200 rounded-lg px-4 py-2.5 text-sm
+     - Focus  : focus:outline-none focus:border-brand-blue-mid focus:ring-2 
+                focus:ring-brand-blue-deep/20
+     - Error  : border-error-red focus:ring-error-red/20
+     - Label  : text-xs font-600 uppercase tracking-wider text-slate-500 mb-2
+
+6.5 ANIMASI & TRANSISI
+  - Durasi standar   : duration-200 (interaksi cepat), duration-300 (transisi halaman)
+  - Hover translate  : hover:-translate-y-1 (card lift effect)
+  - Fade in          : animate-fade-in (custom keyframe: opacity 0→1, translateY 8px→0)
+  - Float animation  : animate-float (custom keyframe: translateY 0→-8px→0, durasi 3s)
+  - JANGAN gunakan animasi yang menyebabkan layout shift (CLS > 0.1)
+  - Prefers-reduced-motion: semua animasi WAJIB dihentikan jika user mengaktifkan ini
+
+6.6 POLA DESAIN SECTION
+  Gunakan pola ini secara konsisten di semua halaman:
+  
+  Section Header (di atas konten):
+    <span class="badge [warna]">Label Kategori</span>
+    <h2 style font-heading>Judul Section Utama</h2>
+    <p class="text-body-md text-slate-500">Deskripsi singkat max 2 kalimat.</p>
+
+  Decorative Grid Background (opsional, untuk hero/section utama):
+    backgroundImage: "radial-gradient(var(--slate-200) 1px, transparent 1px)"
+    backgroundSize: "24px 24px"
+    opacity: 0.4
+
+  Dark Section (contrast break):
+    background: var(--slate-950) | color: white
+    Gunakan text-amber untuk angka/metric besar
+    Gunakan text-slate-400 untuk teks sekunder
+
+BAGIAN 7: STRUKTUR FILE & ARSITEKTUR KODE
+================================================================================
+7.1 KONVENSI PENAMAAN
+  - Komponen React    : PascalCase (contoh: HeroSection.tsx)
+  - Hooks kustom      : camelCase dengan prefix 'use' (contoh: useAuth.ts)
+  - Utilities/helpers : camelCase (contoh: formatDate.ts)
+  - Konstanta         : UPPER_SNAKE_CASE (contoh: MAX_FILE_SIZE)
+  - CSS Classes       : kebab-case (Tailwind convention)
+  - Route folder      : lowercase-kebab (contoh: /blog, /about)
+
+7.2 STRUKTUR FOLDER TARGET (V2)
+  src/
+  ├── app/
+  │   ├── (marketing)/          → Halaman publik (sudah ada, pertahankan)
+  │   ├── (admin)/              → Halaman admin panel (BARU)
+  │   │   ├── layout.tsx        → Layout admin (sidebar nav + auth gate)
+  │   │   ├── login/page.tsx    → Halaman login admin
+  │   │   └── dashboard/        → Sub-halaman CMS per modul
+  │   └── api/
+  │       ├── auth/             → Endpoint login/logout/refresh
+  │       ├── blog/             → CRUD artikel blog
+  │       ├── settings/         → CRUD pengaturan global
+  │       ├── products/         → CRUD data produk
+  │       ├── team/             → CRUD data tim
+  │       └── revalidate/       → On-demand ISR revalidation
+  ├── middleware.ts              → Proteksi route /admin/* dan /api/admin/*
+  └── lib/
+      ├── auth/                 → Helper validasi JWT, session
+      ├── sanity/               → Client & query Sanity CMS
+      ├── supabase/             → Client Supabase (auth + database)
+      └── validations/          → Zod schemas untuk semua form/input
+
+7.3 ATURAN SERVER VS CLIENT COMPONENT
+  - DEFAULT: Semua komponen adalah Server Component
+  - Tambahkan "use client" HANYA jika komponen butuh:
+    * useState, useEffect, useRef, atau hooks React lainnya
+    * Event listener (onClick, onChange, dll.)
+    * Browser API (window, document, navigator)
+  - Data fetching: lakukan di Server Component, kirim sebagai props ke Client
+
+BAGIAN 8: SEO & METADATA STANDAR
+================================================================================
+  Setiap halaman WAJIB memiliki:
+  - <title>: [Nama Halaman] — Brandy | [tagline pendek]
+  - <meta name="description">: Deskripsi unik 120-160 karakter
+  - <meta property="og:*">: Open Graph untuk sharing sosial media
+  - <link rel="canonical">: URL kanonik absolut
+  - Heading hierarchy: satu <h1> per halaman, dilanjut <h2>, <h3>
+  - Sitemap: /sitemap.xml (auto-generate via next-sitemap)
+  - robots.txt: izinkan semua halaman publik, blok /admin/*
+
+BAGIAN 9: ATURAN AI BUILD (ANTI-HALUSINASI — WAJIB DIBACA)
+================================================================================
+Pedoman ini WAJIB diikuti oleh AI di setiap sesi pengerjaan:
+
+  [RULE-01] SELALU baca PRD ini dan laporan_sistem_brandy.txt sebelum mulai
+            membuat atau memodifikasi kode apapun.
+
+  [RULE-02] JANGAN mengganti stack teknologi yang sudah ditetapkan di Bagian 1
+            tanpa konfirmasi eksplisit dari owner/user.
+
+  [RULE-03] JANGAN menghapus atau merename rute/halaman yang sudah ada
+            (daftar di Bagian 2) kecuali diminta secara spesifik.
+
+  [RULE-04] SELALU gunakan warna dari palet resmi (Bagian 6.1).
+            JANGAN gunakan warna Tailwind default (blue-500, red-400, dll.)
+            secara langsung tanpa mapping ke CSS variable resmi.
+
+  [RULE-05] SELALU gunakan font yang sudah ditetapkan (Bagian 6.2).
+            style={{ fontFamily: "var(--font-heading)" }} untuk heading.
+            style={{ fontFamily: "var(--font-display)" }} untuk metric besar.
+
+  [RULE-06] SELALU tambahkan "use client" di atas file komponen yang
+            menggunakan hooks React. JANGAN biarkan Server Component
+            menggunakan hooks client-side.
+
+  [RULE-07] Untuk rute dinamis ([slug]) di Next.js 16+, params WAJIB
+            di-unwrap menggunakan React.use():
+            const { slug } = use(params); — JANGAN destructure langsung.
+
+  [RULE-08] SEMUA endpoint /api/admin/* WAJIB diproteksi validasi JWT.
+            JANGAN pernah skip autentikasi meskipun "hanya untuk testing".
+
+  [RULE-09] Semua teks konten website (nama perusahaan, email, alamat,
+            deskripsi produk) HARUS bersumber dari CMS/database — 
+            JANGAN hardcode di dalam kode komponen React.
+
+  [RULE-10] Setiap kali membuat komponen baru, IKUTI pola desain di
+            Bagian 6 (warna, spacing, border-radius, animasi, badge, button).
+            Konsistensi visual adalah prioritas utama.
+
+  [RULE-11] Setelah setiap sesi build selesai, jalankan:
+            npx tsc --noEmit
+            untuk memastikan tidak ada TypeScript error sebelum deploy.
+
+  [RULE-12] JANGAN commit file .env, .env.local, atau secret apapun ke git.
+            Gunakan environment variable sesuai panduan Bagian 5.4.
+
+BAGIAN 10: NEXT STEPS & ROADMAP V2
+================================================================================
+Urutan pengerjaan yang direkomendasikan:
+
+  FASE 1 — Fondasi CMS (Prioritas Tertinggi):
+    [ ] Buat file src/middleware.ts (proteksi route admin)
+    [ ] Buat halaman /admin/login dengan Supabase Auth
+    [ ] Buat layout admin panel (sidebar + header)
+    [ ] Hubungkan /blog ke Sanity CMS (ganti mockBlog.ts)
+    [ ] Buat API endpoint CRUD untuk blog dengan validasi Zod
+
+  FASE 2 — CMS Modul Lengkap:
+    [ ] Admin panel Settings (nama, logo, kontak perusahaan)
+    [ ] Admin panel Blog (WYSIWYG editor TipTap)
+    [ ] Admin panel Products, Team, Pricing, Careers
+    [ ] On-demand ISR revalidation saat konten diperbarui
+
+  FASE 3 — Keamanan & Performa:
+    [ ] Implementasi HTTP Security Headers di next.config.ts
+    [ ] Setup SWR/React Query untuk client-side caching
+    [ ] Konfigurasi sitemap.xml dan robots.txt
+    [ ] Audit performa dengan Lighthouse (target: skor > 90)
+
+  FASE 4 — Halaman Tambahan:
+    [ ] /partners (Halaman Kemitraan)
+    [ ] /press (Galeri Pers & Media Kit)
+    [ ] /help (Pusat Bantuan & FAQ lengkap)
+    [ ] /changelog (Catatan pembaruan platform)
+    [ ] /status (Monitoring status uptime)
+
+  FASE 5 — Domain & SSL:
+    [ ] Konfigurasi domain kustom (brandy.id)
+    [ ] Setup Nginx reverse proxy di VPS
+    [ ] Aktivasi SSL via Certbot (Let's Encrypt)
+
+================================================================================
+BAGIAN 11: PANDUAN DESAIN LANJUTAN — FUNGSIONAL & ESTETIKA
+================================================================================
+Bagian ini adalah panduan desain mendalam yang WAJIB diikuti AI saat membangun
+atau memodifikasi halaman apapun. Tujuannya adalah memastikan setiap keputusan
+desain memiliki dasar fungsional (membantu user mencapai tujuan) sekaligus
+estetika (memberi kesan premium, profesional, dan terpercaya).
+
+11.1 PRINSIP DASAR DESAIN BRANDY
+--------------------------------------------------------------------------------
+Empat pilar utama yang harus ada di setiap komponen dan halaman:
+
+  [P1] CLARITY (Kejelasan)
+       Pengguna harus tahu dalam 3 detik pertama: "ini website apa, untuk siapa,
+       dan apa yang bisa saya lakukan di sini." Setiap elemen UI harus memiliki
+       tujuan yang jelas. Hapus elemen dekoratif yang tidak menambah nilai.
+
+  [P2] HIERARCHY (Hierarki Visual)
+       Mata pengguna harus bergerak secara natural dari elemen terpenting ke
+       elemen pendukung. Gunakan ukuran, warna, dan bobot font untuk menciptakan
+       urutan baca yang intuitif. Hero → Section Title → Body → CTA.
+
+  [P3] CONSISTENCY (Konsistensi)
+       Komponen yang sama harus terlihat dan berperilaku sama di seluruh halaman.
+       Jarak, warna, border-radius, dan animasi tidak boleh berbeda antar halaman
+       kecuali ada alasan desain yang eksplisit tercatat di PRD ini.
+
+  [P4] DELIGHT (Kesenangan)
+       Detail kecil yang membuat pengguna tersenyum: animasi hover yang halus,
+       transisi yang mulus, pesan sukses yang ramah, loading state yang elegan.
+       Ini yang membedakan produk biasa dari produk premium.
+
+11.2 HIERARKI VISUAL & WHITESPACE
+--------------------------------------------------------------------------------
+Whitespace (ruang kosong) adalah elemen desain, bukan pemborosan ruang.
+
+  Aturan Whitespace:
+  - Gunakan section padding py-20 (80px) secara konsisten antar section
+  - Gap antar card dalam grid: gap-8 (32px) standar, gap-6 (24px) untuk grid padat
+  - Padding dalam card: p-8 (32px) untuk card besar, p-6 (24px) untuk card standar
+  - Jarak antara heading dan body text: mb-4 (16px)
+  - Jarak antara section label (badge) dan heading: mb-4 (16px)
+  - Jarak antara body text dan CTA button: mb-8 (32px)
+
+  Hierarki Ukuran Font dalam Satu Section:
+    1. Badge label          → text-xs uppercase tracking-widest (paling kecil, di atas)
+    2. Section heading      → text-heading-xl font-bold (dominan)
+    3. Section description  → text-body-md text-slate-500 (pendukung, max 2 baris)
+    4. Card title           → text-base atau text-lg font-bold
+    5. Card description     → text-sm text-slate-600
+    6. Caption/label kecil  → text-xs text-slate-400
+
+  Aturan Kontras Warna Teks (WCAG AA Minimum):
+  - Teks gelap di background putih : slate-900 atau slate-800 ✓
+  - Teks sekunder di background putih: slate-600 (ratio > 4.5:1) ✓
+  - Teks putih di background gelap  : white atau slate-200 ✓
+  - JANGAN gunakan slate-400 sebagai teks utama di background putih ✗
+  - JANGAN gunakan teks warna brand langsung untuk body text panjang ✗
+
+11.3 SISTEM GRID & LAYOUT RESPONSIF
+--------------------------------------------------------------------------------
+Semua layout WAJIB responsif (mobile-first). Gunakan pola grid berikut:
+
+  Pola Grid Standar:
+    - 1 kolom  (mobile  < 768px)  → grid-cols-1
+    - 2 kolom  (tablet 768-1024px) → md:grid-cols-2
+    - 3 kolom  (desktop > 1024px) → lg:grid-cols-3
+    - 4 kolom  (wide > 1280px)    → xl:grid-cols-4
+
+  Layout Section Khusus:
+    - Hero             : full-width, max konten 4xl (896px), center-aligned
+    - Feature Bento    : grid asimetris (1 besar + 2 kecil, atau 2+2+1)
+    - 50/50 Layout     : lg:grid-cols-2 dengan gap-12, items-center
+    - Narrow Content   : max-w-2xl atau max-w-3xl, mx-auto (untuk artikel/legal)
+    - Sidebar Layout   : lg:grid-cols-12, main lg:col-span-8, aside lg:col-span-4
+
+  Breakpoint Rules:
+    - Semua teks heading WAJIB lebih kecil di mobile:
+      * text-heading-2xl → mobile: text-3xl atau text-4xl
+      * text-heading-xl  → mobile: text-2xl
+    - Padding container: px-4 (mobile) → px-6 (tablet) → px-8 (desktop)
+    - Stack vertikal di mobile, horizontal di desktop (flex-col → lg:flex-row)
+
+11.4 POLA DESAIN PER TIPE SECTION
+--------------------------------------------------------------------------------
+Setiap tipe section memiliki template desain baku. Gunakan template ini.
+
+  [A] HERO SECTION
+      Background  : bg-white dengan decorative radial dot grid (opacity 0.4)
+      Layout      : center-aligned, max-w-4xl
+      Urutan elemen dari atas ke bawah:
+        1. Badge (pill label kategori)
+        2. H1 heading besar (font-display, dengan 1 kata/frasa gradient warna brand)
+        3. Lead paragraph (text-body-lg, max-w-2xl, text-slate-600)
+        4. CTA button group (primary + secondary/ghost, flex row)
+        5. Social proof kecil (opsional: "Dipercaya 12.000+ perusahaan")
+      Gradient Text : class "text-gradient" → linear-gradient dari brand-blue-mid ke brand-purple-mid
+
+  [B] FEATURE / BENTO GRID SECTION
+      Background  : bg-white atau bg-slate-50 (bergantian dengan section lain)
+      Layout      : Bento grid asimetris untuk visual premium
+      Card style  : bg-white border border-slate-200 rounded-2xl p-8 shadow-sm
+      Aturan Bento:
+        - 1 card BESAR (spanning 2 kolom) untuk fitur utama
+        - 2-4 card kecil untuk fitur pendukung
+        - Setiap card punya: ikon, judul bold, 1-2 kalimat deskripsi
+        - Ikon: ukuran 24px, warna brand-blue-mid, di dalam kotak rounded-lg bg-blue-50
+
+  [C] DARK CONTRAST SECTION
+      Background  : var(--slate-950) atau gradient gelap
+      Kegunaan    : Stats, Testimonials, CTA utama — sebagai "jeda visual"
+      Aturan      :
+        - Teks utama: white atau slate-100
+        - Teks sekunder: slate-400
+        - Angka/metric besar: text-amber, font-display, ukuran 4xl-6xl
+        - Border pemisah antar elemen: border-slate-800
+        - Dekorasi: lingkaran blur berwarna brand-blue-mid/20 di sudut
+
+  [D] TESTIMONIAL / SOCIAL PROOF SECTION
+      Desain kartu testimonial WAJIB:
+        - Background kartu: bg-slate-900 border border-slate-800 (dark theme)
+        - Dekorasi kutip: karakter " ukuran 90-120px, opacity 0.06, font-serif
+        - Teks kutipan: text-sm text-slate-200 italic
+        - Author row: foto avatar rounded-full 40px + nama + jabatan
+        - JANGAN gunakan bintang rating berwarna kuning (sudah ditetapkan sebelumnya)
+        - Ganti bintang dengan teks "Rating 5.0" atau badge "Verified" dalam text-amber
+
+  [E] PRICING SECTION
+      Tiga tier card WAJIB memiliki hierarki visual jelas:
+        - Starter  : border border-slate-200, bg-white (standard)
+        - Growth   : ring-2 ring-brand-blue-mid, scale-[1.03], badge "Paling Populer"
+        - Enterprise: bg-slate-950 text-white (dark, premium feel)
+      Aturan harga:
+        - Angka harga: font-display, text-4xl, bold
+        - Simbol mata uang: text-xs, vertically aligned dengan angka
+        - Periode (/bulan): text-xs, muted color
+        - Fitur list: ikon Check (text-teal) untuk included, Minus (text-slate-300) untuk excluded
+
+  [F] CTA BANNER SECTION
+      Selalu letakkan di bagian akhir halaman sebelum Footer.
+      Dua varian yang diizinkan:
+        Varian Gelap: bg-slate-950, heading putih, tombol amber + outline-white
+        Varian Terang: bg-brand-blue-tint, heading brand-blue-deep, tombol primary + ghost
+      Konten: Heading ajakan + 1-2 kalimat deskripsi + 2 tombol CTA
+
+11.5 DESAIN KOMPONEN INTERAKTIF
+--------------------------------------------------------------------------------
+Komponen yang memiliki state interaktif harus memberikan feedback visual jelas.
+
+  [BUTTON STATES]
+    Default  : warna dasar sesuai varian
+    Hover    : darkened 10% atau bg berubah, tambah shadow-md
+    Active   : scale-95 (sedikit mengecil saat diklik)
+    Disabled : opacity-50 cursor-not-allowed
+    Loading  : tampilkan spinner kecil (animate-spin), teks berubah "Loading..."
+    WAJIB: Semua state harus memiliki transition-all duration-200
+
+  [INPUT FIELD STATES]
+    Default : border-slate-200
+    Focus   : border-brand-blue-mid + ring-2 ring-brand-blue-deep/20
+    Valid   : border-success-green (opsional, hanya jika ada validasi real-time)
+    Error   : border-error-red + text-xs text-error-red di bawah field
+    Disabled: bg-slate-50 cursor-not-allowed opacity-60
+
+  [MODAL / DIALOG]
+    Overlay : bg-slate-950/65 backdrop-blur-sm
+    Container: bg-white rounded-2xl max-w-lg p-6 md:p-8 shadow-2xl
+    Animasi masuk: animate-in fade-in-50 zoom-in-95 duration-200
+    Tombol tutup (X): absolute top-4 right-4, text-slate-400 hover:text-slate-600
+    WAJIB: Tutup modal saat klik overlay atau tekan Escape
+
+  [ACCORDION / FAQ]
+    Default tertutup, konten tersembunyi
+    Header: flex justify-between items-center, klik untuk toggle
+    Ikon: ChevronDown → rotate-180 saat terbuka (transition-transform duration-200)
+    Konten: tampil dengan animasi fade-in (jangan jump/layout shift)
+    Border: border border-slate-200, hover:border-slate-300 saat tertutup
+           border-brand-blue-light saat terbuka (highlight aktif)
+
+  [FILTER PILLS / TABS]
+    Item aktif  : bg-slate-950 text-white border-slate-950 shadow-sm
+    Item non-aktif: bg-white text-slate-600 border-slate-200 hover:border-slate-400
+    Shape: rounded-full px-4 py-2 text-xs font-600
+    Transisi: transition-all duration-150
+
+  [CARD HOVER EFFECT]
+    Standard: hover:-translate-y-1 hover:shadow-md transition-all duration-300
+    Dengan border highlight: hover:border-brand-blue-mid
+    Image zoom: group-hover:scale-105 transition-transform duration-350 (untuk gambar dalam card)
+    JANGAN gunakan hover yang terlalu agresif (translate lebih dari -8px)
+
+11.6 DESAIN NAVIGASI (HEADER & FOOTER)
+--------------------------------------------------------------------------------
+  HEADER:
+    - Fixed di atas (fixed top-0 inset-x-0 z-50)
+    - Background: bg-white/95 backdrop-blur-sm
+    - Height: 64px (konsisten, jangan berubah)
+    - Scroll state: tambahkan border-b border-slate-100 shadow-sm saat scrolled > 10px
+    - Logo: kiri, tinggi h-10 (40px)
+    - Nav links: tengah/kiri, text-[15px] font-medium text-slate-700
+    - CTA buttons: kanan (Login ghost + Get Demo primary)
+    - Mobile: hamburger icon, full-screen drawer dari kanan (translate-x-full → translate-x-0)
+    - Mega menu Products: dropdown 720px lebar, 2-kolom grid produk + 1 kolom featured
+
+  FOOTER:
+    - Background: var(--slate-950)
+    - Logo: gunakan logo_brandy_full_light.png (versi putih)
+    - Tagline: "tumbuh bersama" dalam text-slate-400
+    - Kolom: Logo+desc | Products | Company | Legal | Socials
+    - Copyright: border-t border-slate-800, text-slate-500 text-xs
+    - Link hover: text-slate-400 → text-white transition-colors
+
+11.7 DESAIN HALAMAN ADMIN PANEL
+--------------------------------------------------------------------------------
+Admin panel menggunakan desain terpisah dari marketing site — lebih fungsional,
+lebih padat informasi, tetapi tetap menggunakan identitas visual Brandy.
+
+  Layout Admin:
+    - Sidebar kiri: lebar 240px, bg-slate-900, text-white
+    - Logo di atas sidebar, tautan navigasi per modul di bawahnya
+    - Nav item aktif: bg-brand-blue-mid/20 text-brand-blue-light rounded-lg
+    - Area konten: bg-slate-50, flex-1, overflow-y-auto
+    - Top bar: bg-white border-b border-slate-200, nama user + tombol logout
+
+  Komponen Admin:
+    - Data table: bg-white border border-slate-200 rounded-xl overflow-hidden
+      * Header row: bg-slate-50 text-xs uppercase tracking-wider text-slate-500
+      * Data row: hover:bg-slate-50, border-b border-slate-100
+      * Action buttons: icon-only (Edit=pencil, Delete=trash, View=eye)
+    - Form admin: max-w-2xl, label di atas input, submit di bawah dengan tombol Cancel
+    - Status badge: Published (green), Draft (amber), Archived (slate)
+    - Empty state: ilustrasi/ikon besar + teks panduan + tombol "Tambah Pertama"
+    - Konfirmasi hapus: modal dialog merah dengan peringatan tidak bisa dibatalkan
+
+  Warna Khusus Admin:
+    - Sidebar bg     : bg-slate-900
+    - Content area   : bg-slate-50
+    - Card/table bg  : bg-white
+    - Danger action  : bg-error-red text-white
+    - Success toast  : bg-success-green text-white
+    - Warning toast  : bg-warning-amber text-white
+
+11.8 MICRO-INTERACTIONS & MOTION DESIGN
+--------------------------------------------------------------------------------
+Animasi yang didefinisikan harus konsisten di seluruh codebase.
+
+  Keyframes Wajib (definisikan di globals.css atau tailwind.config.js):
+
+  @keyframes fade-in:
+    from: { opacity: 0; transform: translateY(8px); }
+    to  : { opacity: 1; transform: translateY(0); }
+    Durasi: 300ms, easing: ease-out
+    Gunakan untuk: konten yang muncul setelah interaksi (modal, dropdown, tab)
+
+  @keyframes float:
+    0%, 100%: { transform: translateY(0px); }
+    50%      : { transform: translateY(-8px); }
+    Durasi: 3s, easing: ease-in-out, loop infinite
+    Gunakan untuk: elemen dekoratif di hero (ikon produk mengambang)
+
+  @keyframes slide-in-right:
+    from: { transform: translateX(100%); }
+    to  : { transform: translateX(0); }
+    Durasi: 300ms, easing: ease-out
+    Gunakan untuk: mobile menu drawer
+
+  @keyframes pulse-glow:
+    0%, 100%: { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    50%      : { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+    Durasi: 2s, loop infinite
+    Gunakan untuk: tombol CTA utama di hero (opsional, tidak berlebihan)
+
+  Aturan Animasi:
+    - JANGAN animasikan lebih dari 1-2 property sekaligus
+    - JANGAN gunakan animasi bounce yang berlebihan
+    - Semua animasi WAJIB berhenti jika @media (prefers-reduced-motion: reduce)
+    - Loading skeleton: bg-slate-200 animate-pulse rounded (untuk placeholder konten)
+
+11.9 LOADING STATES & EMPTY STATES
+--------------------------------------------------------------------------------
+Setiap halaman yang memuat data asinkron HARUS memiliki loading state.
+
+  Skeleton Loading (untuk card/list):
+    - Gunakan div dengan bg-slate-200 animate-pulse
+    - Bentuk sesuai konten yang akan muncul (rectangle untuk teks, circle untuk avatar)
+    - Jangan gunakan spinner tunggal untuk seluruh halaman kecuali initial page load
+
+  Empty State (saat tidak ada data):
+    - Tampilkan ikon besar (48-64px, text-slate-300)
+    - Judul: "Belum ada [nama konten]" — text-lg font-bold text-slate-700
+    - Deskripsi: 1 kalimat panduan — text-sm text-slate-500
+    - CTA: tombol untuk menambah konten baru (di admin) atau kembali (di publik)
+
+  Error State:
+    - Ikon warning atau X dalam lingkaran merah muda
+    - Pesan error yang ramah (jangan tampilkan stack trace ke user)
+    - Tombol "Coba Lagi" untuk retry request
+
+  Success State (setelah submit form):
+    - Ikon centang dalam lingkaran hijau
+    - Pesan konfirmasi positif (contoh: "Lamaran berhasil terkirim!")
+    - Auto-dismiss setelah 3-5 detik atau tombol "Tutup"
+
+11.10 AKSESIBILITAS (A11Y) — STANDAR WAJIB
+--------------------------------------------------------------------------------
+Website Brandy harus dapat digunakan oleh semua orang, termasuk pengguna
+yang menggunakan screen reader atau navigasi keyboard.
+
+  Aturan Wajib:
+  - Semua gambar WAJIB memiliki atribut alt yang deskriptif
+    * Logo   : alt="Brandy Logo"
+    * Foto tim: alt="Nama lengkap anggota tim"
+    * Gambar dekoratif: alt="" (string kosong) + aria-hidden="true"
+  - Semua tombol WAJIB memiliki teks yang bermakna atau aria-label
+  - Semua form input WAJIB memiliki <label> yang terhubung via htmlFor/id
+  - Urutan heading WAJIB hierarkis: h1 → h2 → h3 (jangan skip level)
+  - Focus visible: JANGAN hilangkan outline focus tanpa menggantinya
+    Gunakan: focus-visible:ring-2 focus-visible:ring-brand-blue-mid
+  - Warna TIDAK boleh menjadi satu-satunya cara menyampaikan informasi
+    (selalu tambahkan ikon atau teks pendamping)
+  - Navigasi keyboard: modal, dropdown, dan accordion harus bisa dikontrol
+    dengan Tab, Enter, dan Escape
+  - ARIA roles: gunakan role="dialog" untuk modal, role="navigation" untuk nav,
+    aria-expanded untuk accordion/dropdown, aria-label untuk section penting
+
+11.11 PANDUAN PENGGUNAAN GAMBAR & MEDIA
+--------------------------------------------------------------------------------
+  - SELALU gunakan komponen <Image> dari next/image (BUKAN <img> HTML biasa)
+  - Tentukan width dan height yang sesuai untuk mencegah layout shift (CLS)
+  - Gambar above-the-fold: tambahkan priority={true}
+  - Gambar below-the-fold: biarkan lazy-load default
+  - Format gambar: WebP/AVIF diutamakan (Next.js otomatis convert via domains)
+  - Thumbnail blog: rasio 16:9, resolusi minimal 800x450px
+  - Foto tim: rasio 3:4 (vertikal), resolusi minimal 300x400px
+  - Logo: format PNG dengan background transparan
+  - Video embed: gunakan <iframe> dengan aspect-ratio 16:9 di dalam container relatif
+
+  Placeholder saat gambar belum ada:
+  - Avatar/foto tim: div dengan inisial nama, bg gradient brand colors
+  - Thumbnail artikel: div dengan bg-slate-200 + ikon foto di tengah
+
+11.12 DARK MODE (OPSIONAL — FASE BERIKUTNYA)
+--------------------------------------------------------------------------------
+Brandy V2 mengutamakan light mode. Dark mode adalah fitur opsional fase berikutnya.
+Jika diimplementasikan:
+  - Gunakan Tailwind class: dark: prefix
+  - Simpan preferensi di localStorage['brandy-theme']
+  - Tombol toggle di header/footer
+  - Background dark: slate-950 (bukan hitam murni)
+  - Jangan aktifkan prefers-color-scheme otomatis tanpa toggle manual
+
+================================================================================
+BAGIAN 12: CHECKLIST DESAIN SEBELUM DEPLOY
+================================================================================
+Sebelum setiap halaman atau komponen baru dianggap selesai, AI/developer WAJIB
+memverifikasi checklist berikut:
+
+  [ ] Halaman responsif dan tampil baik di 320px (mobile kecil) hingga 1440px
+  [ ] Semua teks memiliki kontras warna yang cukup (min WCAG AA)
+  [ ] Tidak ada teks yang hardcode — semua data bersumber dari CMS/props
+  [ ] Semua gambar menggunakan <Image> dengan alt yang tepat
+  [ ] Semua tombol memiliki aria-label jika tidak ada teks visible
+  [ ] Semua form input memiliki label dan pesan error yang jelas
+  [ ] Loading state tersedia untuk semua konten asinkron
+  [ ] Animasi berhenti saat prefers-reduced-motion aktif
+  [ ] Tidak ada console.error atau TypeScript error (tsc --noEmit clean)
+  [ ] Warna dan font konsisten dengan panduan di Bagian 6 dan Bagian 11
+  [ ] Mobile menu dapat dibuka/ditutup dengan benar
+  [ ] Halaman admin: semua endpoint diproteksi JWT
+  [ ] SEO: title, description, og:image sudah diisi
+
+================================================================================
+AKHIR DOKUMEN PRD BRANDY V2
+Versi: 2.1 | Terakhir diperbarui: 17 Juni 2026
+File ini adalah sumber kebenaran tunggal (single source of truth) untuk
+semua keputusan pengembangan website Brandy.
+AI WAJIB membaca dokumen ini sebelum memulai setiap sesi build.
+================================================================================
+

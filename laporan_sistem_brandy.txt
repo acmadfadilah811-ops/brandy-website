@@ -1,0 +1,144 @@
+================================================================================
+LAPORAN STATUS PEMBANGUNAN DAN STRUKTUR SISTEM WEBSITE BRANDY
+Tanggal Pembaruan: 17 Juni 2026
+Stok Kode: Next.js 16 (App Router), TypeScript, Tailwind CSS
+================================================================================
+
+1. INFORMASI UMUM SISTEM
+--------------------------------------------------------------------------------
+Nama Platform   : Brandy Website (Marketing & SaaS Profile)
+Stack Teknologi :
+  - Core Runtime     : Node.js (v20+)
+  - Web Framework    : Next.js v16.2.9 (App Router)
+  - UI Library       : React v19.2.4 & React DOM v19.2.4
+  - Bahasa Pemrogram : TypeScript (v5.x)
+  - Styling (CSS)    : Tailwind CSS v3.4.19 (dengan utility classes & global.css)
+  - Icon Library     : Lucide React (v0.469.0)
+  - Bundler          : Webpack (ditargetkan untuk kompatibilitas native platform)
+  - Deployment       : Docker & Docker Compose (Standalone mode)
+Status Kompilasi : Berhasil 100% tanpa kesalahan tipe/build (TSC Clean)
+Alamat Server    : http://203.175.125.235:3000 (Running via Docker Container)
+
+2. STRUKTUR DIREKTORI & FILE UTAMA
+--------------------------------------------------------------------------------
+Struktur folder diatur menggunakan standar Next.js App Router dengan pemisahan 
+fitur (features), komponen global (components), dan utilitas (lib).
+
+brandy-website/
+├── public/                     --> Aset statis yang diakses langsung via browser
+│   ├── team/                   --> Foto pimpinan tim (diambil dari Company Profile PDF)
+│   │   ├── member_1.png        --> Foto Bayu Ma'ruf Safii
+│   │   ├── member_2.png        --> Foto Achmad Fadilah
+│   │   └── member_3.png        --> Foto Septiana Budi Rahayu
+│   ├── logo_brandy_full.png    --> Logo utama horizontal dengan tagline (latar transparan)
+│   ├── logo_brandy_full_light.png -> Logo versi putih/terang untuk footer gelap
+│   └── logo_brandy_icon.png    --> Ikon logo saja (tanpa teks)
+├── src/
+│   ├── app/                    --> Routing & layout sistem (App Router)
+│   │   ├── (marketing)/        --> Group route untuk halaman marketing (tanpa prefix URL)
+│   │   │   ├── about/          --> Halaman Tentang Kami (rute: /about)
+│   │   │   ├── blog/           --> Halaman Daftar Blog (rute: /blog)
+│   │   │   │   ├── [slug]/     --> Halaman Detail Blog (rute dinamis: /blog/judul-artikel)
+│   │   │   ├── careers/        --> Halaman Karir (rute: /careers)
+│   │   │   ├── contact/        --> Halaman Kontak (rute: /contact)
+│   │   │   ├── customers/      --> Halaman Pelanggan (rute: /customers)
+│   │   │   ├── demo/           --> Halaman Booking Demo (rute: /demo)
+│   │   │   ├── integrations/   --> Halaman Daftar Integrasi (rute: /integrations)
+│   │   │   ├── legal/          --> Kebijakan Privasi & Syarat Ketentuan
+│   │   │   ├── pricing/        --> Halaman Paket Harga (rute: /pricing)
+│   │   │   ├── products/       --> Halaman Daftar Produk (rute: /products)
+│   │   │   │   └── [slug]/     --> Halaman Detail Produk (rute dinamis: /products/nama-produk)
+│   │   │   ├── layout.tsx      --> Layout khusus marketing (termasuk Header & Footer)
+│   │   │   └── page.tsx        --> Homepage / Beranda Utama (rute: /)
+│   │   ├── api/                --> Rute API internal
+│   │   ├── globals.css         --> CSS global, variabel tema, dan font-face Google Fonts
+│   │   └── layout.tsx          --> Root layout pembungkus seluruh aplikasi
+│   ├── components/             --> Komponen UI reusable global
+│   │   ├── layout/             --> Layout struktural
+│   │   │   ├── Header.tsx      --> Header utama dengan desktop mega menu & mobile drawer
+│   │   │   └── Footer.tsx      --> Footer bawah dengan logo light & tautan legal/sosmed
+│   │   ├── ui/                 --> Komponen UI dasar (Button, Input, dll)
+│   │   └── shared/             --> Komponen bersama (Card, Spinner, dll)
+│   ├── features/               --> Logika & tampilan visual modular per segmen
+│   │   ├── home/               --> Komponen penyusun Beranda Utama
+│   │   │   ├── CTABanner.tsx   --> Banner ajakan bertindak di bagian bawah
+│   │   │   ├── FeatureHighlights.tsx -> Grid Bento Fitur Unggulan
+│   │   │   ├── HeroSection.tsx --> Hero dengan headline besar & animasi mengambang
+│   │   │   ├── HowItWorks.tsx  --> Langkah-langkah penggunaan platform
+│   │   │   ├── IntegrationShowcase.tsx -> Pameran visual tools yang kompatibel
+│   │   │   ├── PricingTeaser.tsx -> Cuplikan paket harga tercepat
+│   │   │   ├── Testimonials.tsx -> Komponen testimoni terintegrasi
+│   │   │   └── TrustedBy.tsx   --> Logo slider horizontal brand/mitra
+│   │   └── blog/, contact/, pricing/ -> Fitur pendukung khusus halaman terkait
+│   ├── lib/                    --> Helper functions & modul data eksternal
+│   │   ├── utils.ts            --> Utilitas class merger (clsx & tailwind-merge)
+│   │   ├── mockBlog.ts         --> Database mock artikel blog untuk pengembangan
+│   │   ├── sanity/             --> Folder client integrasi CMS Sanity
+│   │   └── supabase/           --> Folder client integrasi database Supabase
+│   └── styles/                 --> File kustom style non-Tailwind
+├── Dockerfile                  --> Instruksi kompilasi multi-stage Docker image
+├── docker-compose.yml          --> Konfigurasi container service & port mapping (3000:3000)
+├── next.config.ts              --> Konfigurasi Next.js (termasuk whitelist domain gambar & standalone build)
+├── package.json                --> Definisi paket dependensi & skrip run dev/build
+├── tailwind.config.js          --> Konfigurasi tema Tailwind CSS (custom colors, fonts, animations)
+└── tsconfig.json               --> Konfigurasi compiler TypeScript
+
+3. RINGKASAN FITUR & DETAIL SISTEM SAAT INI
+--------------------------------------------------------------------------------
+Sistem yang terpasang saat ini adalah website profil SaaS modern & responsif 
+yang siap diintegrasikan dengan sistem CMS. Berikut adalah detail implementasinya:
+
+A. Halaman Utama & Fitur Interaktif:
+   - Beranda (Home): Dilengkapi bento grid, testimoni interaktif, dan pricing teaser.
+   - Tentang Kami (About): Menyajikan timeline sejarah interaktif berbasis state 
+     React, 6 pilar Core Values BRANDY, serta kartu profil kepemimpinan tim.
+   - Produk (Products): Menampilkan pustaka SaaS Brandy (Workspace, CRM, Analytics, 
+     DevOps, Pay, Docs) lengkap dengan detail rute dinamis per produk.
+   - Detail Produk (Product Detail): Memuat data ROI berupa persentase dampak bisnis,
+     spesifikasi teknis, daftar integrasi, dan pemutar video demo YouTube.
+   - Harga (Pricing): Memiliki toggle tagihan bulanan/tahunan (dengan diskon 20%),
+     detail tabel perbandingan fitur, form kontak kustom, dan FAQ accordion.
+   - Karir (Careers): Listing lowongan kerja dinamis berdasarkan departemen 
+     lengkap dengan modal form lamaran interaktif dan fitur unggah CV (PDF).
+   - Blog & Detail Blog: Kolom pencarian artikel terintegrasi dengan filter kategori,
+     sidebar Daftar Isi (Table of Contents) yang otomatis dibuat dari heading H2, 
+     dan widget berbagi artikel ke Twitter/LinkedIn/WhatsApp.
+   - Pelanggan (Customers): Halaman kisah sukses dengan layout 50/50, metrik bisnis,
+     dan kartu testimoni berlatar gelap yang bersih.
+   - Kontak & Demo: Integrasi Google Maps, formulir pengiriman email, serta form
+     penjadwalan (scheduler) tanggal/waktu pertemuan demo.
+
+B. Sinkronisasi Data & Aset Brand (Berdasarkan PDF Profil Perusahaan):
+   - Logo asli lengkap dengan tagline "tumbuh bersama" sudah terpasang di Header & Footer.
+   - Tim kepemimpinan sinkron dengan halaman 9 PDF:
+     * Bayu Ma'ruf Safii (UX/UI & Creative Brand Designer)
+     * Achmad Fadilah (AI & Full-Stack Engineer / DevOps Integrator)
+     * Septiana Budi Rahayu (DevRel / Development Relationships)
+   - Core Values terstruktur sesuai inisial B-R-A-N-D-Y:
+     * Bold Innovation (Inovasi Berani)
+     * Reliability (Keandalan)
+     * Aesthetics & Usability (Estetika & Kemudahan)
+     * Nurturing Partnership (Kemitraan)
+     * Dynamic Adaptation (Adaptasi Dinamis)
+     * Yield-Driven (Berorientasi pada Hasil)
+
+4. PERBAIKAN SISTEM TERBARU (SANGAT PENTING)
+--------------------------------------------------------------------------------
+Untuk memastikan kompilasi Next.js 16 berjalan lancar tanpa error, sistem telah 
+diperbarui pada bagian berikut:
+- Penanganan Parameter Dinamis Asinkron:
+  Next.js 15+ dan 16 mewajibkan parameter halaman dinamis (`params`) dibaca sebagai 
+  Promise. Pada rute `/blog/[slug]`, kode telah diperbaiki menggunakan hook `use` 
+  dari React:
+  `const { slug } = use(params);`
+  Ini menyelesaikan error TypeScript di `.next/types` dan membuat seluruh proyek 
+  lolos pengecekan tipe (`tsc --noEmit`) dengan status SUKSES.
+
+5. ARSITEKTUR RUNTIME & DEPLOYMENT
+--------------------------------------------------------------------------------
+- Mode Build: Standalone mode (diaktifkan via next.config.ts dengan `output: "standalone"`).
+  Menghasilkan ukuran Docker image yang sangat kecil (~150MB) karena hanya menyertakan 
+  dependensi runtime yang benar-benar digunakan.
+- Docker Compose: Menjalankan container dengan nama `brandy-website` di port host 3000.
+- Live URL: http://203.175.125.235:3000
+================================================================================

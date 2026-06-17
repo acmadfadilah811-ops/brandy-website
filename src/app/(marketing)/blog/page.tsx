@@ -1,31 +1,37 @@
-"use client";
-
-import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Calendar, Clock, ArrowRight, BookOpen } from "lucide-react";
-import { mockBlogPosts } from "@/lib/mockBlog";
+import { Calendar, Clock, ArrowRight, BookOpen } from "lucide-react";
+import { getAllBlogPosts } from "@/lib/sanity/blog";
+import BlogFilters from "./BlogFilters";
 
-export default function BlogListingPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+export const revalidate = 60; // Caching: ISR revalidate every 60s (PRD Bagian 4)
 
+interface PageProps {
+  searchParams: Promise<{
+    search?: string;
+    category?: string;
+  }>;
+}
+
+export default async function BlogListingPage({ searchParams }: PageProps) {
+  const { search = "", category = "All" } = await searchParams;
   const categories = ["All", "Tutorial", "Insight", "Studi Kasus", "News"];
 
-  // Filter posts based on search query and category
-  const filteredPosts = useMemo(() => {
-    return mockBlogPosts.filter((post) => {
-      const matchesSearch =
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Fetch all blog posts (Sanity CMS with local mock fallback)
+  const allPosts = await getAllBlogPosts();
 
-      const matchesCategory =
-        selectedCategory === "All" || post.category === selectedCategory;
+  // Filter posts on the server based on query parameters
+  const filteredPosts = allPosts.filter((post) => {
+    const matchesSearch =
+      post.title.toLowerCase().includes(search.toLowerCase()) ||
+      post.excerpt.toLowerCase().includes(search.toLowerCase()) ||
+      post.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase()));
 
-      return matchesSearch && matchesCategory;
-    });
-  }, [searchQuery, selectedCategory]);
+    const matchesCategory =
+      category === "All" || post.category === category;
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="bg-white min-h-screen">
@@ -46,7 +52,7 @@ export default function BlogListingPage() {
             <BookOpen size={13} /> Blog & Insights
           </span>
           <h1 
-            className="text-heading-2xl text-slate-900 mb-6 tracking-tight"
+            className="text-heading-2xl text-slate-900 mb-6 tracking-tight animate-fade-in"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             Pikiran, Strategi, & <span className="text-gradient">Inovasi Rekayasa</span> Kami
@@ -56,40 +62,12 @@ export default function BlogListingPage() {
             estetika UI/UX premium, serta update industri dari tim inti Brandy.
           </p>
 
-          {/* Search Bar & Category Filters wrapper */}
-          <div className="max-w-2xl mx-auto space-y-6">
-            {/* Search Input */}
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-brand-blue-mid transition-colors">
-                <Search size={18} />
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari artikel berdasarkan judul, topik, atau kata kunci..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-brand-blue-mid focus:bg-white transition-all shadow-sm"
-                aria-label="Cari artikel blog"
-              />
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full text-xs font-600 transition-all border ${
-                    selectedCategory === category
-                      ? "bg-slate-950 text-white border-slate-950 shadow-sm"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:bg-slate-50"
-                  }`}
-                >
-                  {category === "All" ? "Semua Artikel" : category}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Search Bar & Category Filters client component */}
+          <BlogFilters 
+            categories={categories}
+            initialSearch={search}
+            initialCategory={category}
+          />
         </div>
       </section>
 
@@ -99,15 +77,12 @@ export default function BlogListingPage() {
           {filteredPosts.length === 0 ? (
             <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200 max-w-2xl mx-auto">
               <p className="text-slate-500 font-500 mb-2">Tidak ada artikel yang cocok dengan pencarian Anda.</p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("All");
-                }}
+              <Link
+                href="/blog"
                 className="text-xs text-brand-blue-mid font-600 hover:underline"
               >
                 Reset Filter & Pencarian
-              </button>
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -212,10 +187,7 @@ export default function BlogListingPage() {
           </p>
 
           <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              alert("Terima kasih! Alamat email Anda telah didaftarkan ke mailing list Brandy.");
-            }}
+            action="#"
             className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto"
           >
             <input

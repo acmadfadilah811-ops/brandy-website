@@ -1,6 +1,3 @@
-"use client";
-
-import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,69 +5,149 @@ import {
   Calendar, 
   Clock, 
   ArrowLeft, 
-  Twitter, 
-  Linkedin, 
-  Share2, 
-  Copy, 
-  Check, 
-  Bookmark,
-  ChevronRight
+  ChevronRight,
+  Bookmark
 } from "lucide-react";
-import { useState } from "react";
-import { mockBlogPosts } from "@/lib/mockBlog";
+import { PortableText } from "@portabletext/react";
+import { getBlogPostBySlug, getAllBlogPosts } from "@/lib/sanity/blog";
 import { ButtonLink } from "@/components/ui/Button";
+import BlogShare from "./BlogShare";
+
+export const revalidate = 60; // Caching: ISR revalidate every 60s (PRD Bagian 4)
 
 interface BlogDetailPageProps {
-  params: {
+  params: Promise<{
     slug: string;
+  }>;
+}
+
+// ── SEO & METADATA GENERATOR (PRD Bagian 8 & 12) ─────────────────────────
+export async function generateMetadata({ params }: BlogDetailPageProps) {
+  const { slug } = await params;
+  const post = await getBlogPostBySlug(slug);
+
+  if (!post) {
+    return {
+      title: "Artikel Tidak Ditemukan",
+    };
+  }
+
+  return {
+    title: post.seoTitle || post.title,
+    description: post.seoDesc || post.excerpt,
+    openGraph: {
+      title: post.seoTitle || post.title,
+      description: post.seoDesc || post.excerpt,
+      images: [
+        {
+          url: post.thumbnail,
+          alt: post.title,
+        },
+      ],
+    },
   };
 }
 
-export default function BlogDetailPage({ params }: BlogDetailPageProps) {
-  const { slug } = params;
-  const [copied, setCopied] = useState(false);
+// Custom Portable Text Renderers for Sanity CMS Block Content
+const portableTextComponents = {
+  block: {
+    h2: ({ children }: any) => {
+      const text = children.toString();
+      const id = text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+      return (
+        <h2 
+          id={id} 
+          className="text-heading-lg text-slate-900 mt-10 mb-4 tracking-tight scroll-mt-20"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          {children}
+        </h2>
+      );
+    },
+    h3: ({ children }: any) => {
+      const text = children.toString();
+      const id = text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+      return (
+        <h3 
+          id={id} 
+          className="text-heading-md text-slate-900 mt-8 mb-3 tracking-tight scroll-mt-20"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          {children}
+        </h3>
+      );
+    },
+    normal: ({ children }: any) => (
+      <p className="leading-relaxed mb-6 text-slate-700">{children}</p>
+    ),
+    blockquote: ({ children }: any) => (
+      <blockquote className="border-l-4 border-brand-blue-mid bg-slate-50 px-6 py-4 my-8 rounded-r-xl text-slate-800 italic font-500">
+        {children}
+      </blockquote>
+    ),
+  },
+  list: {
+    bullet: ({ children }: any) => (
+      <ul className="list-disc list-inside pl-4 mb-6 space-y-2 text-slate-700">{children}</ul>
+    ),
+    number: ({ children }: any) => (
+      <ol className="list-decimal list-inside pl-4 mb-6 space-y-2 text-slate-700">{children}</ol>
+    ),
+  },
+  types: {
+    code: ({ value }: any) => (
+      <div className="my-8 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 p-5 shadow-inner">
+        <div className="flex justify-between items-center text-[10px] uppercase tracking-wider text-slate-400 mb-3 border-b border-white/5 pb-2">
+          <span>{value.language || "code"}</span>
+        </div>
+        <pre className="overflow-x-auto text-xs text-slate-200 font-mono leading-relaxed scrollbar-thin">
+          <code>{value.code}</code>
+        </pre>
+      </div>
+    ),
+  }
+};
 
-  // Find the post
-  const post = useMemo(() => {
-    return mockBlogPosts.find((p) => p.slug === slug);
-  }, [slug]);
+export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
+  const { slug } = await params;
+  const post = await getBlogPostBySlug(slug);
 
   if (!post) {
     return notFound();
   }
 
-  // Get related posts (posts in the same category or overall other posts, max 2)
-  const relatedPosts = useMemo(() => {
-    return mockBlogPosts
-      .filter((p) => p.slug !== slug)
-      .slice(0, 2);
-  }, [slug]);
+  // Fetch sibling articles for related posts
+  const allPosts = await getAllBlogPosts();
+  const relatedPosts = allPosts
+    .filter((p) => p.slug !== slug)
+    .slice(0, 2);
 
-  // Generate Table of Contents (TOC) based on H2 headings in the body
-  const toc = useMemo(() => {
-    return post.body
-      .filter((block) => block.type === "heading" && block.level === 2)
-      .map((block) => {
-        const text = block.content as string;
-        // Simple slugify for anchors
-        const id = text
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, "")
-          .replace(/\s+/g, "-");
-        return { text, id };
-      });
-  }, [post]);
+  const isMockBody = Array.isArray(post.body) && post.body.length > 0 && "type" in post.body[0];
 
-  const handleCopyLink = () => {
-    if (typeof window !== "undefined") {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  // Extract Table of Contents (TOC) based on H2 elements
+  const getTOC = () => {
+    if (!post.body) return [];
+    if (isMockBody) {
+      return (post.body as any[])
+        .filter((block) => block.type === "heading" && block.level === 2)
+        .map((block) => {
+          const text = block.content as string;
+          const id = text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+          return { text, id };
+        });
+    } else {
+      return (post.body as any[])
+        .filter((block) => block._type === "block" && block.style === "h2")
+        .map((block) => {
+          const text = block.children?.map((c: any) => c.text).join("") || "";
+          const id = text.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+          return { text, id };
+        });
     }
   };
 
-  const shareUrl = typeof window !== "undefined" ? encodeURIComponent(window.location.href) : "";
-  const shareTitle = encodeURIComponent(post.title);
+  const toc = getTOC();
+  const currentUrl = `https://brandy.id/blog/${slug}`;
 
   return (
     <div className="bg-white min-h-screen pb-20">
@@ -156,87 +233,81 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
               />
             </div>
 
-            {/* Dynamic Body Renderer */}
-            {post.body.map((block, index) => {
-              switch (block.type) {
-                case "paragraph":
-                  return (
-                    <p key={index} className="leading-relaxed mb-6 text-slate-700">
-                      {block.content}
-                    </p>
-                  );
-                case "heading":
-                  const headingText = block.content as string;
-                  const id = headingText
-                    .toLowerCase()
-                    .replace(/[^\w\s-]/g, "")
-                    .replace(/\s+/g, "-");
-                  if (block.level === 2) {
+            {/* Dynamic Content Renderer */}
+            {isMockBody ? (
+              // ── MOCK DATA switch-case parser
+              (post.body as any[]).map((block, index) => {
+                switch (block.type) {
+                  case "paragraph":
                     return (
-                      <h2
-                        key={index}
-                        id={id}
-                        className="text-heading-lg text-slate-900 mt-10 mb-4 tracking-tight scroll-mt-20"
-                        style={{ fontFamily: "var(--font-heading)" }}
-                      >
-                        {headingText}
-                      </h2>
+                      <p key={index} className="leading-relaxed mb-6 text-slate-700">
+                        {block.content}
+                      </p>
                     );
-                  } else {
-                    return (
-                      <h3
-                        key={index}
-                        id={id}
-                        className="text-heading-md text-slate-900 mt-8 mb-3 tracking-tight scroll-mt-20"
-                        style={{ fontFamily: "var(--font-heading)" }}
-                      >
-                        {headingText}
-                      </h3>
-                    );
-                  }
-                case "quote":
-                  return (
-                    <blockquote
-                      key={index}
-                      className="border-l-4 border-brand-blue-mid bg-slate-50 px-6 py-4 my-8 rounded-r-xl text-slate-800 italic font-500"
-                    >
-                      "{block.content}"
-                    </blockquote>
-                  );
-                case "list":
-                  const listItems = block.content as string[];
-                  return (
-                    <ul key={index} className="list-disc list-inside pl-4 mb-6 space-y-2 text-slate-700">
-                      {listItems.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  );
-                case "code":
-                  const codeContent = block.content as string;
-                  return (
-                    <div key={index} className="my-8 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 p-5 shadow-inner">
-                      <div className="flex justify-between items-center text-[10px] uppercase tracking-wider text-slate-400 mb-3 border-b border-white/5 pb-2">
-                        <span>{block.language || "code"}</span>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(codeContent);
-                            alert("Kode disalin ke clipboard!");
-                          }}
-                          className="hover:text-white transition-colors"
+                  case "heading":
+                    const headingText = block.content as string;
+                    const id = headingText.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+                    if (block.level === 2) {
+                      return (
+                        <h2
+                          key={index}
+                          id={id}
+                          className="text-heading-lg text-slate-900 mt-10 mb-4 tracking-tight scroll-mt-20"
+                          style={{ fontFamily: "var(--font-heading)" }}
                         >
-                          Salin
-                        </button>
+                          {headingText}
+                        </h2>
+                      );
+                    } else {
+                      return (
+                        <h3
+                          key={index}
+                          id={id}
+                          className="text-heading-md text-slate-900 mt-8 mb-3 tracking-tight scroll-mt-20"
+                          style={{ fontFamily: "var(--font-heading)" }}
+                        >
+                          {headingText}
+                        </h3>
+                      );
+                    }
+                  case "quote":
+                    return (
+                      <blockquote
+                        key={index}
+                        className="border-l-4 border-brand-blue-mid bg-slate-50 px-6 py-4 my-8 rounded-r-xl text-slate-800 italic font-500"
+                      >
+                        "{block.content}"
+                      </blockquote>
+                    );
+                  case "list":
+                    const listItems = block.content as string[];
+                    return (
+                      <ul key={index} className="list-disc list-inside pl-4 mb-6 space-y-2 text-slate-700">
+                        {listItems.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    );
+                  case "code":
+                    const codeContent = block.content as string;
+                    return (
+                      <div key={index} className="my-8 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 p-5 shadow-inner">
+                        <div className="flex justify-between items-center text-[10px] uppercase tracking-wider text-slate-400 mb-3 border-b border-white/5 pb-2">
+                          <span>{block.language || "code"}</span>
+                        </div>
+                        <pre className="overflow-x-auto text-xs text-slate-200 font-mono leading-relaxed scrollbar-thin">
+                          <code>{codeContent}</code>
+                        </pre>
                       </div>
-                      <pre className="overflow-x-auto text-xs text-slate-200 font-mono leading-relaxed scrollbar-thin">
-                        <code>{codeContent}</code>
-                      </pre>
-                    </div>
-                  );
-                default:
-                  return null;
-              }
-            })}
+                    );
+                  default:
+                    return null;
+                }
+              })
+            ) : (
+              // ── SANITY CMS Portable Text parser
+              <PortableText value={post.body as any} components={portableTextComponents} />
+            )}
 
             {/* Tags footer */}
             <div className="pt-8 mt-8 border-t border-slate-100 flex flex-wrap gap-2">
@@ -302,48 +373,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
               </div>
             )}
 
-            {/* Share / Social Buttons */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sticky top-[24rem] shadow-sm">
-              <h4 className="text-xs font-700 uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-1.5">
-                <Share2 size={13} /> Bagikan Artikel
-              </h4>
-              <div className="grid grid-cols-4 gap-2">
-                <a
-                  href={`https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareTitle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex justify-center items-center h-10 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-brand-blue-mid hover:text-white hover:border-brand-blue-mid transition-all"
-                  aria-label="Bagikan ke Twitter / X"
-                >
-                  <Twitter size={16} />
-                </a>
-                <a
-                  href={`https://www.linkedin.com/shareArticle?url=${shareUrl}&title=${shareTitle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex justify-center items-center h-10 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-brand-blue-mid hover:text-white hover:border-brand-blue-mid transition-all"
-                  aria-label="Bagikan ke LinkedIn"
-                >
-                  <Linkedin size={16} />
-                </a>
-                <a
-                  href={`https://api.whatsapp.com/send?text=${shareTitle}%20${shareUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex justify-center items-center h-10 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-green-600 hover:text-white hover:border-green-600 transition-all"
-                  aria-label="Bagikan ke WhatsApp"
-                >
-                  <Share2 size={16} />
-                </a>
-                <button
-                  onClick={handleCopyLink}
-                  className="flex justify-center items-center h-10 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all"
-                  aria-label="Salin tautan artikel"
-                >
-                  {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                </button>
-              </div>
-            </div>
+            {/* Share / Social Buttons Client component */}
+            <BlogShare url={currentUrl} title={post.title} />
 
             {/* Sidebar Promo CTA */}
             <div className="bg-slate-950 text-white rounded-2xl p-6 relative overflow-hidden shadow-md sticky top-[34rem]">
