@@ -5,19 +5,9 @@ import { sanityClient } from "@/lib/sanity/client";
 import { globalSettingsSchema } from "@/lib/validations/settings";
 import { mockSettings } from "@/lib/mockSettings";
 
-// GET /api/admin/settings - Get current site configurations
+// GET /api/admin/settings - Get current site configurations (Public)
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized. Sesi login tidak valid." },
-        { status: 401 }
-      );
-    }
-
     if (isSanityWriteConfigured()) {
       const settings = await sanityClient.fetch(`*[_type == "siteSettings"][0]`);
       if (settings) {

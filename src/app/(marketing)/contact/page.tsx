@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Mail, 
   Phone, 
@@ -14,6 +14,13 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function ContactPage() {
+  const [settings, setSettings] = useState({
+    officeAddress: "TCC Batavia Tower One, Lt. 32\nJl. KH. Mas Mansyur No.121, Karet Tengsin\nJakarta Pusat, DKI Jakarta 10220",
+    contactPhone: "+62 21 1234 5678",
+    contactEmail: "hello@brandy.id",
+    mapsEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.452674996918!2d106.81591547585097!3d-6.203860060769344!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f41b31555555%3A0xe54fb7256193798c!2sTCC%20Batavia!5e0!3m2!1sid!2sid!4v1718534000000!5m2!1sid!2sid",
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -23,6 +30,20 @@ export default function ContactPage() {
   });
 
   const [formSubmitted, setFormSubmitted] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setSettings((prev) => ({
+            ...prev,
+            ...data.settings,
+          }));
+        }
+      })
+      .catch((err) => console.error("Error loading contact settings", err));
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,10 +110,8 @@ export default function ContactPage() {
                     </span>
                     <div>
                       <h3 className="text-sm font-bold text-white mb-1">Kantor Pusat</h3>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        TCC Batavia Tower One, Lt. 32<br />
-                        Jl. KH. Mas Mansyur No.121, Karet Tengsin<br />
-                        Jakarta Pusat, DKI Jakarta 10220
+                      <p className="text-xs text-slate-300 leading-relaxed" style={{ whiteSpace: "pre-line" }}>
+                        {settings.officeAddress}
                       </p>
                     </div>
                   </div>
@@ -105,8 +124,7 @@ export default function ContactPage() {
                     <div>
                       <h3 className="text-sm font-bold text-white mb-1">Telepon & WA</h3>
                       <p className="text-xs text-slate-300">
-                        +62 (21) 5098-7788<br />
-                        +62 812-9900-1122 (WhatsApp Support)
+                        {settings.contactPhone}
                       </p>
                     </div>
                   </div>
@@ -119,9 +137,7 @@ export default function ContactPage() {
                     <div>
                       <h3 className="text-sm font-bold text-white mb-1">Email Resmi</h3>
                       <p className="text-xs text-slate-300">
-                        support@brandy.id (Customer Support)<br />
-                        sales@brandy.id (Enterprise Sales)<br />
-                        info@brandy.id (Umum & Kemitraan)
+                        {settings.contactEmail}
                       </p>
                     </div>
                   </div>
@@ -299,7 +315,7 @@ export default function ContactPage() {
           <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm h-[350px] relative bg-slate-100">
             {/* Styled Google Maps Iframe */}
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.452674996918!2d106.81591547585097!3d-6.203860060769344!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f41b31555555%3A0xe54fb7256193798c!2sTCC%20Batavia!5e0!3m2!1sid!2sid!4v1718534000000!5m2!1sid!2sid"
+              src={settings.mapsEmbedUrl}
               width="100%"
               height="100%"
               style={{ border: 0 }}

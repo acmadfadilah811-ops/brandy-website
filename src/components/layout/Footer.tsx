@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ButtonLink } from "@/components/ui/Button";
@@ -69,6 +70,46 @@ const socialLinks = [
 /* ------------------------------------------------------------------ */
 
 export default function Footer() {
+  const [settings, setSettings] = useState<{
+    companyName: string;
+    officeAddress: string;
+    contactEmail: string;
+    contactPhone: string;
+    socialTwitter: string;
+    socialLinkedIn: string;
+    socialInstagram: string;
+  }>({
+    companyName: "Brandy Technologies",
+    officeAddress: "Jakarta Selatan, Indonesia",
+    contactEmail: "hello@brandy.id",
+    contactPhone: "+62 21 1234 5678",
+    socialTwitter: "https://twitter.com/brandyid",
+    socialLinkedIn: "https://linkedin.com/company/brandyid",
+    socialInstagram: "https://instagram.com/brandyid",
+  });
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setSettings((prev) => ({
+            ...prev,
+            ...data.settings,
+          }));
+        }
+      })
+      .catch((err) => console.error("Error loading footer settings", err));
+  }, []);
+
+  const dynamicSocialLinks = [
+    { icon: Twitter, label: "Twitter / X", href: settings.socialTwitter || "https://twitter.com/brandyid" },
+    { icon: Linkedin, label: "LinkedIn", href: settings.socialLinkedIn || "https://linkedin.com/company/brandyid" },
+    { icon: Instagram, label: "Instagram", href: settings.socialInstagram || "https://instagram.com/brandyid" },
+    { icon: Youtube, label: "YouTube", href: "https://youtube.com/@brandyid" },
+    { icon: Github, label: "GitHub", href: "https://github.com/brandyid" },
+  ];
+
   return (
     <footer
       className="relative overflow-hidden"
@@ -113,9 +154,9 @@ export default function Footer() {
             {/* Contact info */}
             <div className="mt-5 space-y-2">
               {[
-                { icon: MapPin, text: "Jakarta Selatan, Indonesia" },
-                { icon: Mail, text: "hello@brandy.id" },
-                { icon: Phone, text: "+62 21 1234 5678" },
+                { icon: MapPin, text: settings.officeAddress },
+                { icon: Mail, text: settings.contactEmail },
+                { icon: Phone, text: settings.contactPhone },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-2">
                   <Icon size={13} strokeWidth={1.5} style={{ color: "var(--slate-400)" }} aria-hidden="true" />
@@ -207,7 +248,7 @@ export default function Footer() {
 
           {/* Social Icons */}
           <div className="flex items-center gap-3" aria-label="Media sosial Brandy">
-            {socialLinks.map(({ icon: Icon, label, href }) => (
+            {dynamicSocialLinks.map(({ icon: Icon, label, href }) => (
               <a
                 key={label}
                 href={href}
