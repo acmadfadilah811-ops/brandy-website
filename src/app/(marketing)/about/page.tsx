@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { 
@@ -18,78 +18,97 @@ import {
 import { cn } from "@/lib/utils";
 import { ButtonLink } from "@/components/ui/Button";
 
-// Milestones / Timeline
-const milestones = [
+// Milestones / Timeline default
+const defaultMilestones = [
   {
+    id: "1",
     year: "2021",
     title: "Awal Mula Brandy",
     description: "Brandy didirikan oleh sekelompok insinyur perangkat lunak di Jakarta dengan misi menyederhanakan kolaborasi tim untuk bisnis lokal.",
   },
   {
+    id: "2",
     year: "2022",
     title: "Pendanaan Seed & Rilis V1",
     description: "Menerima pendanaan awal sebesar $1.5M dari East Ventures dan secara resmi meluncurkan platform SaaS Brandy versi 1.0 ke pasar.",
   },
   {
+    id: "3",
     year: "2023",
     title: "Ekspansi Regional",
     description: "Membuka kantor cabang di Singapura dan memperluas layanan ke Malaysia dan Filipina. Pengguna tumbuh hingga 5.000+ organisasi.",
   },
   {
+    id: "4",
     year: "2024",
     title: "Brandy Enterprise & AI",
     description: "Meluncurkan solusi Enterprise dengan keamanan tingkat militer dan fitur automasi cerdas berbasis kecerdasan buatan (AI).",
   },
   {
+    id: "5",
     year: "2025",
     title: "Memimpin Pasar Asia Tenggara",
     description: "Dipercaya oleh lebih dari 12.000 perusahaan aktif dengan tingkat retensi pelanggan mencapai 98% secara regional.",
   },
 ];
 
-// Core Values (BRANDY)
-const values = [
+// Core Values mapping (B-R-A-N-D-Y)
+const valueIcons: Record<string, any> = {
+  B: Sparkles,
+  R: Shield,
+  A: Heart,
+  N: Users,
+  D: Globe,
+  Y: Target,
+};
+
+const valueColors: Record<string, string> = {
+  B: "border-blue-500",
+  R: "border-teal-500",
+  A: "border-amber-500",
+  N: "border-purple-500",
+  D: "border-indigo-500",
+  Y: "border-red-500",
+};
+
+// Default Values
+const defaultValues = [
   {
-    icon: Sparkles,
+    key: "B",
     title: "Bold Innovation (Inovasi Berani)",
     description: "Kami tidak pernah berhenti bereksperimen dengan teknologi dan pendekatan arsitektur terbaru demi menghasilkan performa produk digital yang optimal.",
-    color: "border-blue-500",
   },
   {
-    icon: Shield,
+    key: "R",
     title: "Reliability (Keandalan)",
     description: "Menjadi mitra yang dapat dipercaya. Setiap deployment server dipastikan aman, minim downtime, dengan proteksi data yang ketat.",
-    color: "border-teal-500",
   },
   {
-    icon: Heart,
+    key: "A",
     title: "Aesthetics & Usability (Estetika & Kemudahan)",
     description: "Setiap baris kode dan piksel desain dibuat dengan ketelitian tinggi. Produk digital Brandy tidak hanya fungsional, tetapi juga memanjakan mata.",
-    color: "border-amber-500",
   },
   {
-    icon: Users,
+    key: "N",
     title: "Nurturing Partnership (Kemitraan)",
     description: "Membangun hubungan jangka panjang dengan klien lewat dukungan teknis pasca-rilis, transparansi komunikasi, dan konsultasi gratis.",
-    color: "border-purple-500",
   },
   {
-    icon: Globe,
+    key: "D",
     title: "Dynamic Adaptation (Adaptasi Dinamis)",
     description: "Fleksibel terhadap kebutuhan pasar, masukan dari pengguna, serta perubahan cepat lanskap teknologi digital dunia.",
-    color: "border-indigo-500",
   },
   {
-    icon: Target,
+    key: "Y",
     title: "Yield-Driven (Berorientasi pada Hasil)",
     description: "Fokus pada solusi teknologi yang memberikan efisiensi operasional dan peningkatan profitabilitas (ROI) yang nyata bagi bisnis klien kami.",
-    color: "border-red-500",
   },
 ];
 
-// Leadership Team from Brandy Company Profile PDF
-const leaders = [
+// Leadership Team default
+const defaultLeaders = [
   {
+    id: "1",
     name: "Bayu Ma'ruf Safii",
     role: "UX/UI & Creative Brand Designer",
     image: "/team/member_1.png",
@@ -97,6 +116,7 @@ const leaders = [
     linkedin: "https://linkedin.com",
   },
   {
+    id: "2",
     name: "Achmad Fadilah",
     role: "AI & Full-Stack Engineer / DevOps Integrator",
     image: "/team/member_2.png",
@@ -104,6 +124,7 @@ const leaders = [
     linkedin: "https://linkedin.com",
   },
   {
+    id: "3",
     name: "Septiana Budi Rahayu",
     role: "DevRel / Development Relationships",
     image: "/team/member_3.png",
@@ -114,12 +135,35 @@ const leaders = [
 
 export default function AboutPage() {
   const [activeTimelineYear, setActiveTimelineYear] = useState("2021");
+  const [data, setData] = useState({
+    mission: "Menyediakan infrastruktur kolaborasi SaaS terbaik untuk mempercepat produktivitas bisnis digital di Asia Tenggara.",
+    vision: "Menjadi standar utama platform operasi bisnis berbasis cloud yang tepercaya, aman, dan mudah diintegrasikan.",
+    leaders: defaultLeaders,
+    milestones: defaultMilestones,
+    values: defaultValues,
+  });
+
+  useEffect(() => {
+    fetch("/api/admin/about")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && resData.about) {
+          setData(resData.about);
+          if (resData.about.milestones?.length > 0) {
+            const years = resData.about.milestones.map((m: any) => m.year);
+            if (!years.includes(activeTimelineYear)) {
+              setActiveTimelineYear(years[0]);
+            }
+          }
+        }
+      })
+      .catch((err) => console.error("Error loading about page data", err));
+  }, []);
 
   return (
     <div className="bg-white min-h-screen">
-      {/* ── 1. HERO SECTION (compact with white bg + subtle grid pattern) ── */}
+      {/* ── 1. HERO SECTION ── */}
       <section className="relative overflow-hidden border-b border-slate-100 py-16 lg:py-24" aria-label="Hero About">
-        {/* Decorative Grid Pattern */}
         <div 
           className="absolute inset-0 opacity-40 pointer-events-none"
           style={{
@@ -146,7 +190,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── 2. STORY SECTION ────────────────────────────────────────── */}
+      {/* ── 2. STORY SECTION ── */}
       <section className="py-20" aria-label="Sejarah Perusahaan">
         <div className="container-brand max-w-5xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -190,13 +234,13 @@ export default function AboutPage() {
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 mb-1">Misi Kami</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Menyediakan infrastruktur kolaborasi SaaS terbaik untuk mempercepat produktivitas bisnis digital di Asia Tenggara.
+                    {data.mission}
                   </p>
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 mb-1">Visi Kami</h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Menjadi standar utama platform operasi bisnis berbasis cloud yang tepercaya, aman, dan mudah diintegrasikan.
+                    {data.vision}
                   </p>
                 </div>
               </div>
@@ -205,7 +249,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── 3. TIMELINE SECTION (Milestones) ───────────────────────── */}
+      {/* ── 3. TIMELINE SECTION (Milestones) ── */}
       <section className="py-20 bg-slate-50 border-t border-b border-slate-100" aria-label="Milestones Perusahaan">
         <div className="container-brand max-w-5xl">
           <div className="text-center mb-12">
@@ -220,9 +264,9 @@ export default function AboutPage() {
 
           {/* Timeline navigation */}
           <div className="flex justify-start md:justify-center overflow-x-auto pb-4 gap-2 border-b border-slate-200 mb-8 max-w-3xl mx-auto scrollbar-none">
-            {milestones.map((m) => (
+            {data.milestones.map((m) => (
               <button
-                key={m.year}
+                key={m.id}
                 onClick={() => setActiveTimelineYear(m.year)}
                 className={cn(
                   "px-5 py-2.5 rounded-full text-sm font-600 border transition-all shrink-0",
@@ -238,10 +282,10 @@ export default function AboutPage() {
 
           {/* Timeline content display */}
           <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm max-w-3xl mx-auto min-h-[180px] flex flex-col justify-center transition-all duration-300">
-            {milestones.map((m) => {
+            {data.milestones.map((m) => {
               if (m.year !== activeTimelineYear) return null;
               return (
-                <div key={m.year} className="space-y-4 animate-fade-in">
+                <div key={m.id} className="space-y-4 animate-fade-in">
                   <span className="text-xs font-bold text-amber bg-amber/10 px-3 py-1 rounded-full uppercase tracking-wider">
                     Milestone {m.year}
                   </span>
@@ -258,7 +302,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── 4. VALUES & CULTURE (Feature Cards with colored borders) ── */}
+      {/* ── 4. VALUES & CULTURE ── */}
       <section className="py-20" aria-label="Nilai-nilai Utama Perusahaan">
         <div className="container-brand max-w-5xl">
           <div className="text-center mb-16">
@@ -272,14 +316,15 @@ export default function AboutPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {values.map((v, idx) => {
-              const IconComp = v.icon;
+            {data.values.map((v, idx) => {
+              const IconComp = valueIcons[v.key] || Award;
+              const borderCol = valueColors[v.key] || "border-slate-500";
               return (
                 <div
                   key={idx}
                   className={cn(
                     "bg-white rounded-xl p-8 border border-slate-200 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md border-l-4",
-                    v.color
+                    borderCol
                   )}
                 >
                   <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 text-brand-blue-mid mb-5">
@@ -298,7 +343,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── 5. STATS SECTION (DARK BACKGROUND - CONTRAST POINT) ──────── */}
+      {/* ── 5. STATS SECTION ── */}
       <section className="py-20" style={{ background: "var(--slate-950)", color: "white" }} aria-label="Statistik Utama">
         <div className="container-brand max-w-5xl">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
@@ -350,7 +395,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── 6. LEADERSHIP TEAM SECTION ──────────────────────────────── */}
+      {/* ── 6. LEADERSHIP TEAM SECTION ── */}
       <section className="py-20" aria-label="Tim Kepemimpinan Brandy">
         <div className="container-brand max-w-5xl">
           <div className="text-center mb-16">
@@ -364,7 +409,7 @@ export default function AboutPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {leaders.map((leader, idx) => (
+            {data.leaders.map((leader, idx) => (
               <div key={idx} className="group flex flex-col items-center text-center">
                 {/* Photo Container */}
                 <div className="relative w-48 h-60 rounded-2xl overflow-hidden mb-5 border border-slate-200 group-hover:border-brand-blue-mid transition-all duration-350 shadow-sm shrink-0">
@@ -386,21 +431,23 @@ export default function AboutPage() {
                 <p className="text-xs text-slate-500 leading-relaxed max-w-[230px] mb-4">
                   {leader.bio}
                 </p>
-                <Link
-                  href={leader.linkedin}
-                  target="_blank"
-                  className="text-slate-400 hover:text-brand-blue-mid transition-colors"
-                  aria-label={`LinkedIn profil ${leader.name}`}
-                >
-                  <Linkedin size={16} />
-                </Link>
+                {leader.linkedin && (
+                  <Link
+                    href={leader.linkedin}
+                    target="_blank"
+                    className="text-slate-400 hover:text-brand-blue-mid transition-colors"
+                    aria-label={`LinkedIn profil ${leader.name}`}
+                  >
+                    <Linkedin size={16} />
+                  </Link>
+                )}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── 7. AWARDS & PRESS SECTION ───────────────────────────────── */}
+      {/* ── 7. AWARDS & PRESS SECTION ── */}
       <section className="py-16 bg-slate-50 border-t border-slate-100" aria-label="Penghargaan dan Liputan Media">
         <div className="container-brand max-w-5xl text-center">
           <p className="text-xs font-700 uppercase tracking-widest text-slate-400 mb-8">
@@ -424,7 +471,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── 8. JOIN TEAM CTA BANNER ─────────────────────────────────── */}
+      {/* ── 8. JOIN TEAM CTA BANNER ── */}
       <section className="py-20 border-t border-slate-100" aria-label="Ajakan Bergabung">
         <div className="container-brand max-w-4xl text-center">
           <h2 className="text-heading-xl text-slate-900 mb-6" style={{ fontFamily: "var(--font-heading)" }}>
