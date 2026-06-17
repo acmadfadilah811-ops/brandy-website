@@ -29,6 +29,14 @@ export default function LoginPage() {
       return;
     }
 
+    // Prototype Bypass Check
+    if (email === "admin@brandy.id" && password === "brandy123") {
+      document.cookie = "brandy-mock-admin-session=true; path=/; max-age=28800; SameSite=Strict";
+      router.push("/admin/dashboard");
+      router.refresh();
+      return;
+    }
+
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,

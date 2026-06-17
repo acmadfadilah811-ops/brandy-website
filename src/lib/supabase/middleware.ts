@@ -29,6 +29,25 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Wrap getUser to support mock admin session
+  const originalGetUser = supabase.auth.getUser.bind(supabase.auth);
+  supabase.auth.getUser = async (token?: string) => {
+    const mockCookie = request.cookies.get("brandy-mock-admin-session")?.value;
+    if (mockCookie === "true") {
+      return {
+        data: {
+          user: {
+            id: "mock-admin-id",
+            email: "admin@brandy.id",
+            role: "authenticated",
+          } as any,
+        },
+        error: null,
+      };
+    }
+    return originalGetUser(token);
+  };
+
   // Refresh auth token
   const {
     data: { user },
