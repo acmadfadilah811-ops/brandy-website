@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import { Check, Minus, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ButtonLink } from "@/components/ui/Button";
 
-// Pricing data
-const plans = [
+// Pricing data default
+const defaultPlans = [
   {
+    id: "starter",
     name: "Starter",
     description: "Solusi esensial untuk tim kecil dan startup.",
     monthlyPrice: 19,
@@ -30,6 +31,7 @@ const plans = [
     ],
   },
   {
+    id: "growth",
     name: "Growth",
     description: "Fitur lengkap untuk produktivitas tim yang berkembang.",
     monthlyPrice: 49,
@@ -51,6 +53,7 @@ const plans = [
     ],
   },
   {
+    id: "enterprise",
     name: "Enterprise",
     description: "Keamanan, kontrol, dan dukungan tingkat korporasi.",
     monthlyPrice: 99,
@@ -73,24 +76,29 @@ const plans = [
   },
 ];
 
-const faqs = [
+const defaultFAQs = [
   {
+    id: "faq_1",
     question: "Apakah saya bisa membatalkan langganan kapan saja?",
     answer: "Ya, Anda dapat membatalkan langganan Anda kapan saja melalui dashboard akun Anda. Jika Anda membatalkan, akses Anda akan tetap aktif hingga akhir periode penagihan berjalan.",
   },
   {
+    id: "faq_2",
     question: "Bagaimana cara kerja trial gratis 14 hari?",
     answer: "Anda mendapatkan akses penuh ke semua fitur paket Growth selama 14 hari tanpa dipungut biaya. Kami tidak meminta kartu kredit untuk pendaftaran trial. Setelah 14 hari, Anda dapat memilih untuk berlangganan atau akun Anda akan otomatis diturunkan ke paket basic gratis.",
   },
   {
+    id: "faq_3",
     question: "Apakah ada biaya tersembunyi?",
     answer: "Tidak ada biaya tersembunyi sama sekali. Harga yang Anda lihat di atas adalah biaya bersih. PPN 11% akan ditambahkan sesuai dengan regulasi perpajakan yang berlaku di Indonesia.",
   },
   {
+    id: "faq_4",
     question: "Apakah tersedia harga diskon untuk organisasi non-profit?",
     answer: "Ya! Kami menawarkan diskon khusus sebesar 30% untuk institusi pendidikan, organisasi nirlaba (NGO), dan startup tahap awal. Silakan hubungi tim sales kami untuk proses verifikasi dokumen.",
   },
   {
+    id: "faq_5",
     question: "Metode pembayaran apa saja yang didukung?",
     answer: "Kami menerima berbagai metode pembayaran termasuk Kartu Kredit (Visa, MasterCard), Transfer Bank (Virtual Account Mandiri, BCA, BNI, BRI), serta dompet digital populer (GoPay, OVO, Dana).",
   },
@@ -129,6 +137,21 @@ const comparisonFeatures = [
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [data, setData] = useState({
+    plans: defaultPlans,
+    faqs: defaultFAQs,
+  });
+
+  useEffect(() => {
+    fetch("/api/admin/pricing")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && resData.pricing) {
+          setData(resData.pricing);
+        }
+      })
+      .catch((err) => console.error("Error loading pricing page data", err));
+  }, []);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -143,7 +166,6 @@ export default function PricingPage() {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormSubmitted(true);
-    // In real app, we would send this data to Supabase/API
   };
 
   return (
@@ -210,7 +232,7 @@ export default function PricingPage() {
       <section className="section-padding py-16" aria-label="Daftar Paket Harga">
         <div className="container-brand">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
-            {plans.map((plan) => {
+            {data.plans.map((plan) => {
               const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
               
               return (
@@ -547,7 +569,7 @@ export default function PricingPage() {
           </div>
 
           <div className="space-y-4 max-w-3xl mx-auto">
-            {faqs.map((faq, idx) => {
+            {data.faqs.map((faq, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
                 <div
