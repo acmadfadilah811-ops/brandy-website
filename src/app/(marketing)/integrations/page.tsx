@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, Puzzle, ArrowRight, ExternalLink, HelpCircle, Check } from "lucide-react";
 import { ButtonLink } from "@/components/ui/Button";
 
 interface IntegrationItem {
+  id?: string;
   name: string;
   category: "Collaboration" | "Analytics" | "CRM" | "Marketing" | "DevOps";
   logoText: string;
@@ -15,7 +16,7 @@ interface IntegrationItem {
   isPopular?: boolean;
 }
 
-const integrations: IntegrationItem[] = [
+const defaultIntegrations: IntegrationItem[] = [
   {
     name: "Slack",
     category: "Collaboration",
@@ -88,8 +89,23 @@ const integrations: IntegrationItem[] = [
 export default function IntegrationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [integrations, setIntegrations] = useState<IntegrationItem[]>(defaultIntegrations);
 
-  const categories = ["All", "Collaboration", "Analytics", "CRM", "Marketing", "DevOps"];
+  useEffect(() => {
+    fetch("/api/admin/integrations")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && resData.integrations) {
+          setIntegrations(resData.integrations);
+        }
+      })
+      .catch((err) => console.error("Error loading integrations data", err));
+  }, []);
+
+  const categories = useMemo(() => {
+    const uniqueCats = Array.from(new Set(integrations.map((item) => item.category)));
+    return ["All", ...uniqueCats];
+  }, [integrations]);
 
   const filteredIntegrations = useMemo(() => {
     return integrations.filter((item) => {
@@ -102,7 +118,7 @@ export default function IntegrationsPage() {
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [integrations, searchQuery, selectedCategory]);
 
   return (
     <div className="bg-white min-h-screen">
